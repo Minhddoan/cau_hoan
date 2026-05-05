@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, X, Star } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { ImagePicker } from '../components/ImagePicker';
 
 const EMPTY = { customer_name: '', customer_role: '', content: '', rating: 5, avatar_url: '', is_active: true, sort_order: 0 };
 
@@ -96,7 +97,12 @@ export function TestimonialsPage() {
                 {[5,4,3,2,1].map(r => <option key={r} value={r}>{r} sao</option>)}
               </select>
             </div>
-            <div className="form-group"><label className="form-label">URL Avatar</label><input className="form-input" value={form.avatar_url} onChange={f('avatar_url')} placeholder="https://..." /></div>
+            <ImagePicker 
+              label="URL Avatar" 
+              value={form.avatar_url} 
+              onChange={(url) => setForm((v: any) => ({ ...v, avatar_url: url }))} 
+              type="avatars" 
+            />
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.8rem', marginBottom: '1rem' }}>
               <input type="checkbox" checked={form.is_active} onChange={f('is_active')} /> Hiển thị trên website
             </label>

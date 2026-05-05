@@ -5,6 +5,8 @@ import { AdminLayout } from './components/AdminLayout';
 import { LoginPage }     from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProductsPage }  from './pages/ProductsPage';
+import { ServicesPage }  from './pages/ServicesPage';
+import { GalleryPage }   from './pages/GalleryPage';
 import { ArticlesPage }  from './pages/ArticlesPage';
 import { FaqsPage }      from './pages/FaqsPage';
 import { TestimonialsPage } from './pages/TestimonialsPage';
@@ -36,6 +38,8 @@ export default function App() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard"    element={<DashboardPage />} />
             <Route path="products"     element={<ProductsPage />} />
+            <Route path="services"     element={<ServicesPage />} />
+            <Route path="gallery"      element={<GalleryPage />} />
             <Route path="articles"     element={<ArticlesPage />} />
             <Route path="faqs"         element={<FaqsPage />} />
             <Route path="testimonials" element={<TestimonialsPage />} />

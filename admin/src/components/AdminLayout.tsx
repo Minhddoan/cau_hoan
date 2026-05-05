@@ -3,7 +3,8 @@ import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Package, BookOpen, HelpCircle, Calendar,
-  Briefcase, Users2, Settings, FileText, Star, LogOut, Bell, ChevronDown
+  Briefcase, Users2, Settings, FileText, Star, LogOut, Bell, ChevronDown,
+  Image, ConciergeBell, FileBadge
 } from 'lucide-react';
 
 const navItems = [
@@ -12,13 +13,15 @@ const navItems = [
   ]},
   { group: 'Nội Dung', items: [
     { to: '/products',     icon: Package,      label: 'Sản Phẩm' },
+    { to: '/services',     icon: ConciergeBell,label: 'Dịch Vụ' },
     { to: '/articles',     icon: BookOpen,     label: 'Bài Viết' },
+    { to: '/gallery',      icon: Image,        label: 'Thư Viện' },
     { to: '/faqs',         icon: HelpCircle,   label: 'Hỏi Đáp' },
     { to: '/testimonials', icon: Star,         label: 'Đánh Giá' },
   ]},
   { group: 'Vận Hành', items: [
     { to: '/bookings',     icon: Calendar,     label: 'Lịch Hẹn' },
-    { to: '/jobs',         icon: Briefcase,    label: 'Tuyển Dụng' },
+    { to: '/jobs',         icon: FileBadge,    label: 'Tuyển Dụng' },
   ]},
   { group: 'Hệ Thống', items: [
     { to: '/users',        icon: Users2,       label: 'Người Dùng', role: 'super_admin' },

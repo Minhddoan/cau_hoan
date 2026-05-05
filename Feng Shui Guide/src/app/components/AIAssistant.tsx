@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, Sparkles, RefreshCw } from "lucide-react";
+import { chatWithAI } from "../../lib/api";
 
 interface Message {
   id: number;
@@ -15,21 +16,6 @@ const suggestions = [
   "Màu sắc phòng ngủ hợp với mệnh Hỏa?",
   "Cây cảnh nào phù hợp cho phòng khách?",
 ];
-
-const faqAnswers: Record<string, string> = {
-  "hướng nhà tốt": "Hướng nhà tốt phụ thuộc vào tuổi và mệnh của gia chủ. Theo Bát Trạch, mỗi người có 4 hướng tốt (Sinh Khí, Thiên Y, Diên Niên, Phục Vị) và 4 hướng xấu. Với tuổi Nhâm Tý (mệnh Thủy), các hướng Bắc, Đông Nam, Đông, Nam thường là tốt. Tuy nhiên, cần kết hợp với hướng tọa của đất và năm Phi Tinh để có kết quả chính xác nhất.",
-  "bàn thờ": "Bàn thờ nên đặt ở vị trí trang trọng, cao ráo, thoáng đãng. Không đặt đối diện cửa chính, không đặt ở phòng ngủ hoặc nhà vệ sinh. Vị trí tốt nhất là ở cung Phúc Đức (thường là góc đối diện với cửa vào của phòng khách). Bàn thờ nên quay về hướng tốt theo mệnh gia chủ.",
-  "màu sắc": "Với mệnh Hỏa (Bính, Đinh, Mậu, Kỷ sinh năm cuối 6, 7, 8, 9): Màu đỏ, cam, tím là màu vượng khí. Màu vàng, nâu đất là màu trợ lực. Tránh dùng màu đen, xanh đậm vì Thủy khắc Hỏa. Phòng ngủ có thể dùng tông đỏ wine hoặc cam đất ấm áp.",
-  "cây cảnh": "Cây phù hợp cho phòng khách theo phong thủy: Cây Kim Tiền (tài lộc), Trúc may mắn (bình an), Kim Ngân (vượng tài), Vạn Niên Thanh (trường thọ). Tránh cây có gai, cây leo không có điểm tựa. Nên đặt cây ở hướng Đông hoặc Đông Nam để kích hoạt khí Mộc tăng vượng.",
-};
-
-function findAnswer(question: string): string {
-  const q = question.toLowerCase();
-  for (const [key, answer] of Object.entries(faqAnswers)) {
-    if (q.includes(key)) return answer;
-  }
-  return "Cảm ơn bạn đã đặt câu hỏi! Để tư vấn chính xác nhất, tôi cần biết thêm thông tin về ngày tháng năm sinh của bạn và diện tích, hướng nhà hiện tại. Bạn có thể chia sẻ thêm để tôi hỗ trợ tốt hơn không? Hoặc bạn có thể đặt lịch tư vấn trực tiếp với Thầy Song Vũ để được giải đáp toàn diện hơn.";
-}
 
 export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
@@ -53,7 +39,7 @@ export function AIAssistant() {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = (text?: string) => {
+  const sendMessage = async (text?: string) => {
     const content = text || input.trim();
     if (!content) return;
 
@@ -68,8 +54,10 @@ export function AIAssistant() {
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const answer = findAnswer(content);
+    try {
+      const res = await chatWithAI(content);
+      let answer = res.success ? res.answer : "Xin lỗi, hiện tại tôi không thể kết nối được máy chủ. Xin vui lòng thử lại sau.";
+      
       const botMsg: Message = {
         id: Date.now() + 1,
         role: "assistant",
@@ -77,8 +65,18 @@ export function AIAssistant() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);
+    } catch (err) {
+      console.error(err);
+      const botMsg: Message = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: "Đã có lỗi xảy ra khi kết nối thuật toán AI. Hệ thống chuyên gia đang bảo trì. Vui lòng thử lại sau.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, botMsg]);
+    } finally {
       setIsTyping(false);
-    }, 1200 + Math.random() * 800);
+    }
   };
 
   const resetChat = () => {
@@ -139,7 +137,7 @@ export function AIAssistant() {
                   <Bot className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <div className="text-white text-sm" style={{ fontWeight: 700 }}>AI Song Vũ</div>
+                  <div className="text-white text-sm" style={{ fontWeight: 700 }}>AI Song Vũ API</div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                     <span className="text-gray-400 text-xs">Trực tuyến 24/7</span>
@@ -229,7 +227,7 @@ export function AIAssistant() {
 
                       {/* Bubble */}
                       <div
-                        className={`max-w-[80%] p-3.5 text-sm leading-relaxed ${
+                        className={`max-w-[80%] p-3.5 text-sm leading-relaxed whitespace-pre-wrap ${
                           msg.role === "assistant"
                             ? "bg-white/5 border border-white/8 text-gray-300"
                             : "bg-primary/20 border border-primary/30 text-white"

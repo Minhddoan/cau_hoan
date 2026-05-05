@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
   BookOpen,
@@ -18,148 +18,11 @@ import {
   Home,
   Star,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
+import { getArticles, getImageUrl } from "../../lib/api";
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const CATEGORIES = [
-  "Tất Cả",
-  "Ngũ Hành",
-  "Bát Trạch",
-  "Huyền Không",
-  "Tứ Trụ",
-  "Phong Thủy Nhà Ở",
-  "Phong Thủy Kinh Doanh",
-];
-
-const ARTICLES = [
-  {
-    id: 1,
-    category: "Ngũ Hành",
-    title: "Ngũ Hành – Triết Lý Vũ Trụ Á Đông",
-    excerpt:
-      "Năm yếu tố Kim – Mộc – Thủy – Hỏa – Thổ tạo nên sự vận hành của vũ trụ. Hiểu về Ngũ Hành là nền tảng để ứng dụng phong thủy vào cuộc sống.",
-    image: "https://images.unsplash.com/photo-1498938271812-01861258f1a6?w=800",
-    readTime: "8 phút",
-    views: "12.4K",
-    featured: true,
-    icon: Flame,
-    color: "text-red-400",
-    tags: ["Căn Bản", "Ngũ Hành"],
-  },
-  {
-    id: 2,
-    category: "Bát Trạch",
-    title: "Nguyên Lý Bát Trạch – Phân Tích 8 Cung Vị",
-    excerpt:
-      "Bát Trạch chia không gian nhà ở thành 8 cung vị tương ứng 8 hướng địa lý, mỗi cung mang năng lượng riêng. Tìm hiểu cách xác định cung vị của bạn.",
-    image: "https://images.unsplash.com/photo-1556117153-659e8ce704c1?w=800",
-    readTime: "10 phút",
-    views: "9.1K",
-    featured: false,
-    icon: Compass,
-    color: "text-gold",
-    tags: ["Phong Thủy Căn Bản", "Bát Trạch"],
-  },
-  {
-    id: 3,
-    category: "Huyền Không",
-    title: "Huyền Không Phi Tinh – Hệ Thống Nâng Cao",
-    excerpt:
-      "Huyền Không Phi Tinh phân tích 9 ngôi sao năng lượng di chuyển theo thời gian, giúp dự đoán vận khí từng năm, từng tháng trong không gian sống.",
-    image: "https://images.unsplash.com/photo-1730627584454-fcbac9544df6?w=800",
-    readTime: "12 phút",
-    views: "7.8K",
-    featured: false,
-    icon: Star,
-    color: "text-purple-400",
-    tags: ["Nâng Cao", "Huyền Không"],
-  },
-  {
-    id: 4,
-    category: "Tứ Trụ",
-    title: "Tứ Trụ Mệnh Số – Bản Đồ Cuộc Đời",
-    excerpt:
-      "Bốn trụ Năm – Tháng – Ngày – Giờ sinh tạo nên bản đồ vận mệnh. Phân tích Tứ Trụ giúp hiểu điểm mạnh, điểm yếu và định hướng sự nghiệp, hôn nhân.",
-    image: "https://images.unsplash.com/photo-1736608152641-1bbe23152556?w=800",
-    readTime: "15 phút",
-    views: "11.2K",
-    featured: false,
-    icon: BookOpen,
-    color: "text-blue-400",
-    tags: ["Mệnh Học", "Tứ Trụ"],
-  },
-  {
-    id: 5,
-    category: "Phong Thủy Nhà Ở",
-    title: "Cách Bố Trí Phòng Khách Theo Phong Thủy",
-    excerpt:
-      "Phòng khách là bộ mặt của căn nhà và tụ điểm khí trường. Hướng sofa, vị trí tivi, cây xanh và màu sắc đều ảnh hưởng đến vượng khí của gia đình.",
-    image: "https://images.unsplash.com/photo-1556117153-659e8ce704c1?w=800&crop=entropy",
-    readTime: "7 phút",
-    views: "15.6K",
-    featured: false,
-    icon: Home,
-    color: "text-green-400",
-    tags: ["Nhà Ở", "Thực Hành"],
-  },
-  {
-    id: 6,
-    category: "Phong Thủy Nhà Ở",
-    title: "Phong Thủy Phòng Ngủ – Ngủ Ngon, Khỏe Mạnh",
-    excerpt:
-      "Đầu giường đặt hướng nào? Gương có nên treo trong phòng ngủ? Màu sắc nào mang lại giấc ngủ sâu? Tất cả bí quyết phong thủy phòng ngủ cho bạn.",
-    image: "https://images.unsplash.com/photo-1604680124443-5610f57efe0d?w=800",
-    readTime: "9 phút",
-    views: "18.3K",
-    featured: false,
-    icon: Home,
-    color: "text-indigo-400",
-    tags: ["Nhà Ở", "Sức Khỏe"],
-  },
-  {
-    id: 7,
-    category: "Phong Thủy Kinh Doanh",
-    title: "Phong Thủy Văn Phòng – Thu Hút Tài Lộc",
-    excerpt:
-      "Vị trí bàn giám đốc, hướng cửa chính công ty, màu sắc thương hiệu và cách bài trí văn phòng theo phong thủy giúp tăng doanh thu và thuận hòa nội bộ.",
-    image: "https://images.unsplash.com/photo-1583122078166-d3c8cde5a72e?w=800",
-    readTime: "11 phút",
-    views: "8.9K",
-    featured: false,
-    icon: Compass,
-    color: "text-amber-400",
-    tags: ["Kinh Doanh", "Tài Lộc"],
-  },
-  {
-    id: 8,
-    category: "Ngũ Hành",
-    title: "Vòng Tương Sinh Tương Khắc Của Ngũ Hành",
-    excerpt:
-      "Kim sinh Thủy, Thủy sinh Mộc, Mộc sinh Hỏa, Hỏa sinh Thổ, Thổ sinh Kim. Nắm vững quy luật này để ứng dụng màu sắc, vật liệu và vị trí trong không gian sống.",
-    image: "https://images.unsplash.com/photo-1750254218520-e3fbbd071bfd?w=800",
-    readTime: "6 phút",
-    views: "6.4K",
-    featured: false,
-    icon: CircleDot,
-    color: "text-gray-300",
-    tags: ["Ngũ Hành", "Căn Bản"],
-  },
-  {
-    id: 9,
-    category: "Phong Thủy Kinh Doanh",
-    title: "Xem Ngày Khai Trương – Chọn Giờ Hoàng Đạo",
-    excerpt:
-      "Khai trương đúng ngày, đúng giờ là bước khởi đầu thuận lợi cho doanh nghiệp. Hướng dẫn chi tiết cách tính ngày tốt theo tuổi chủ và loại hình kinh doanh.",
-    image: "https://images.unsplash.com/photo-1580524764788-08f860f58f50?w=800",
-    readTime: "13 phút",
-    views: "5.7K",
-    featured: false,
-    icon: BookOpen,
-    color: "text-gold",
-    tags: ["Xem Ngày", "Kinh Doanh"],
-  },
-];
+// ─── Static UI Data ──────────────────────────────────────────────────────────
 
 const FIVE_ELEMENTS = [
   {
@@ -217,22 +80,45 @@ const FIVE_ELEMENTS = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function KnowledgePage() {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>(["Tất Cả"]);
+  const [loading, setLoading] = useState(true);
+
   const [activeCategory, setActiveCategory] = useState("Tất Cả");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const filtered = ARTICLES.filter((a) => {
-    const matchCat = activeCategory === "Tất Cả" || a.category === activeCategory;
+  useEffect(() => {
+    const fetchArts = async () => {
+      setLoading(true);
+      try {
+        const res = await getArticles({ limit: 100 });
+        if (res.success) {
+          setArticles(res.data);
+          const cats = ["Tất Cả", ...Array.from(new Set(res.data.map((a: any) => a.category_name)))].filter(Boolean) as string[];
+          setCategories(cats);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArts();
+  }, []);
+
+  const filtered = articles.filter((a) => {
+    const matchCat = activeCategory === "Tất Cả" || a.category_name === activeCategory;
     const q = searchQuery.toLowerCase();
     const matchSearch =
       !q ||
-      a.title.toLowerCase().includes(q) ||
-      a.excerpt.toLowerCase().includes(q) ||
-      a.category.toLowerCase().includes(q);
+      (a.title && a.title.toLowerCase().includes(q)) ||
+      (a.excerpt && a.excerpt.toLowerCase().includes(q)) ||
+      (a.category_name && a.category_name.toLowerCase().includes(q));
     return matchCat && matchSearch;
   });
 
-  const featured = filtered.find((a) => a.featured) ?? filtered[0];
+  const featured = filtered.find((a) => a.is_featured) ?? filtered[0];
   const rest = filtered.filter((a) => a.id !== featured?.id);
 
   return (
@@ -303,7 +189,6 @@ export function KnowledgePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.08 }}
                 onClick={() => {
-                  setActiveCategory("Ngũ Hành");
                   setSearchQuery(el.element);
                 }}
                 className={`border ${el.borderColor} ${el.bgColor} ${el.hoverBg} p-4 text-center group transition-all duration-300 rounded-xl`}
@@ -322,7 +207,7 @@ export function KnowledgePage() {
       <div className="border-b border-white/5 sticky top-[64px] z-30 bg-black/95 backdrop-blur-md">
         <div className="container mx-auto px-6">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide py-3">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => { setActiveCategory(cat); setSearchQuery(""); }}
@@ -342,7 +227,6 @@ export function KnowledgePage() {
       {/* ── Content ── */}
       <div className="container mx-auto px-6 py-12">
 
-        {/* Result info */}
         <div className="flex items-center justify-between mb-8">
           <p className="text-white/30 text-sm">
             <span className="text-gold font-bold">{filtered.length}</span> bài viết
@@ -361,7 +245,11 @@ export function KnowledgePage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {filtered.length === 0 ? (
+          {loading ? (
+             <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-center py-32">
+               <Loader2 className="w-10 h-10 text-gold animate-spin" />
+             </motion.div>
+          ) : filtered.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0 }}
@@ -399,7 +287,7 @@ export function KnowledgePage() {
                   <div className="grid grid-cols-1 lg:grid-cols-2">
                     <div className="relative overflow-hidden aspect-[16/9] lg:aspect-auto lg:min-h-[320px]">
                       <img
-                        src={featured.image}
+                        src={getImageUrl(featured.image_url) || "https://placehold.co/800x600/111/gold?text=Chua+Co+Hinh"}
                         alt={featured.title}
                         className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                       />
@@ -414,7 +302,7 @@ export function KnowledgePage() {
                     <div className="p-8 lg:p-10 flex flex-col justify-center bg-white/[0.02]">
                       <div className="flex items-center gap-2 mb-4">
                         <span className="px-3 py-1 bg-gold/10 border border-gold/20 text-gold text-[10px] uppercase tracking-[0.2em] font-bold rounded-full">
-                          {featured.category}
+                          {featured.category_name}
                         </span>
                       </div>
                       <h2 className="text-2xl lg:text-3xl text-white uppercase tracking-wider mb-4 font-extrabold group-hover:text-gold transition-colors leading-tight">
@@ -424,8 +312,7 @@ export function KnowledgePage() {
                         {featured.excerpt}
                       </p>
                       <div className="flex items-center gap-6 text-xs text-white/30 uppercase tracking-wider mb-6">
-                        <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />{featured.readTime}</span>
-                        <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" />{featured.views}</span>
+                        <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" />{featured.view_count || 0}</span>
                       </div>
                       <div className="flex items-center gap-2 text-gold text-sm font-bold uppercase tracking-widest group-hover:gap-4 transition-all">
                         {expandedId === featured.id ? "Thu gọn" : "Đọc bài viết"}
@@ -434,7 +321,6 @@ export function KnowledgePage() {
                     </div>
                   </div>
 
-                  {/* Expanded content */}
                   <AnimatePresence>
                     {expandedId === featured.id && (
                       <motion.div
@@ -445,34 +331,8 @@ export function KnowledgePage() {
                         className="overflow-hidden border-t border-gold/10"
                       >
                         <div className="p-8 lg:p-10 bg-white/[0.02]">
-                          <div className="max-w-3xl space-y-5 text-white/60 leading-relaxed">
-                            <p>
-                              Ngũ Hành là học thuyết cơ bản nhất trong triết học Á Đông, xuất hiện từ thời nhà Chu
-                              (khoảng 1046 – 256 TCN). Học thuyết cho rằng vũ trụ được cấu thành bởi năm loại vật chất
-                              và năng lượng cơ bản: Kim, Mộc, Thủy, Hỏa, Thổ – và mọi hiện tượng tự nhiên đều là biểu
-                              hiện của sự tương tác giữa chúng.
-                            </p>
-                            <p>
-                              Trong phong thủy, Ngũ Hành được ứng dụng để phân tích không gian sống, chọn màu sắc trang trí,
-                              xác định hướng nhà, chọn vật phẩm phù hợp và thậm chí đặt tên cho con cái. Mỗi con người
-                              khi sinh ra đều mang trong mình một mệnh thuộc một trong 5 hành, và cuộc sống sẽ thuận lợi
-                              hơn khi được hỗ trợ bởi những yếu tố hợp mệnh.
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
-                              {[
-                                { title: "Vòng Tương Sinh", content: "Kim → Thủy → Mộc → Hỏa → Thổ → Kim. Hành này sinh ra hành kia, tạo nên chu kỳ nuôi dưỡng và phát triển." },
-                                { title: "Vòng Tương Khắc", content: "Kim khắc Mộc, Mộc khắc Thổ, Thổ khắc Thủy, Thủy khắc Hỏa, Hỏa khắc Kim. Kiểm soát và cân bằng lẫn nhau." },
-                              ].map((block) => (
-                                <div key={block.title} className="bg-white/5 border border-gold/10 p-5 rounded-xl">
-                                  <h4 className="text-gold font-bold uppercase tracking-widest text-sm mb-3">{block.title}</h4>
-                                  <p className="text-white/50 text-sm leading-relaxed">{block.content}</p>
-                                </div>
-                              ))}
-                            </div>
-                            <p>
-                              Để biết mệnh của mình thuộc hành nào và cách ứng dụng Ngũ Hành vào cuộc sống, hãy liên hệ
-                              với Thầy Song Vũ để được tư vấn chuyên sâu và cá nhân hóa.
-                            </p>
+                          <div className="max-w-3xl space-y-5 text-white/60 leading-relaxed" 
+                               dangerouslySetInnerHTML={{__html: featured.content || "Đang cập nhật nội dung..."}}>
                           </div>
                         </div>
                       </motion.div>
@@ -493,29 +353,19 @@ export function KnowledgePage() {
                       className="group bg-white/[0.02] border border-white/5 hover:border-gold/25 rounded-2xl overflow-hidden transition-all duration-500 cursor-pointer flex flex-col"
                       onClick={() => setExpandedId(expandedId === article.id ? null : article.id)}
                     >
-                      {/* Thumbnail */}
                       <div className="relative overflow-hidden aspect-video shrink-0">
                         <img
-                          src={article.image}
+                          src={getImageUrl(article.image_url) || "https://placehold.co/800x600/111/gold?text=Chua+Co+Hinh"}
                           alt={article.title}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                        <div className="absolute bottom-3 left-3 flex gap-2 flex-wrap">
-                          {article.tags.map((tag) => (
-                            <span key={tag} className="px-2 py-0.5 bg-black/60 backdrop-blur-sm text-gold text-[9px] uppercase tracking-wider font-bold rounded-full border border-gold/20">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
                       </div>
 
-                      {/* Content */}
                       <div className="p-6 flex flex-col flex-1">
                         <div className="flex items-center gap-3 mb-3 text-[10px] text-white/30 uppercase tracking-wider">
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{article.readTime}</span>
-                          <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{article.views}</span>
-                          <span className="flex items-center gap-1"><Tag className="w-3 h-3" />{article.category}</span>
+                          <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{article.view_count || 0}</span>
+                          <span className="flex items-center gap-1"><Tag className="w-3 h-3" />{article.category_name}</span>
                         </div>
 
                         <h3 className="text-white uppercase tracking-wider mb-3 font-bold group-hover:text-gold transition-colors leading-tight flex-1">
@@ -532,7 +382,6 @@ export function KnowledgePage() {
                         </div>
                       </div>
 
-                      {/* Expandable content */}
                       <AnimatePresence>
                         {expandedId === article.id && (
                           <motion.div
@@ -543,15 +392,9 @@ export function KnowledgePage() {
                             className="overflow-hidden"
                           >
                             <div className="px-6 pb-6 pt-2 border-t border-gold/10">
-                              <p className="text-white/50 text-sm leading-relaxed mb-4">{article.excerpt}</p>
-                              <p className="text-white/40 text-sm leading-relaxed">
-                                Để tìm hiểu sâu hơn về chủ đề <span className="text-gold">{article.category}</span> và
-                                nhận tư vấn cá nhân hóa theo tuổi, mệnh và không gian sống, hãy liên hệ trực tiếp với
-                                Thầy Song Vũ qua hệ thống đặt lịch trực tuyến.
-                              </p>
-                              <button className="mt-4 flex items-center gap-2 text-xs text-gold/70 hover:text-gold uppercase tracking-widest transition-colors font-bold">
-                                Đặt lịch tư vấn <ChevronRight className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="text-white/50 text-sm leading-relaxed mb-4" 
+                                   dangerouslySetInnerHTML={{__html: article.content || "Đang cập nhật nội dung..."}}>
+                              </div>
                             </div>
                           </motion.div>
                         )}
@@ -590,11 +433,6 @@ export function KnowledgePage() {
               <Link to="/#assistant">
                 <button className="px-8 py-3.5 bg-gold text-black text-xs uppercase tracking-[0.2em] font-bold hover:bg-gold/90 transition-all shadow-lg shadow-gold/20 rounded-xl">
                   Hỏi Trợ Lý AI
-                </button>
-              </Link>
-              <Link to="/hoi-dap">
-                <button className="px-8 py-3.5 border border-gold/30 text-gold text-xs uppercase tracking-[0.2em] font-bold hover:bg-gold/5 transition-all rounded-xl">
-                  Xem Hỏi Đáp
                 </button>
               </Link>
             </div>

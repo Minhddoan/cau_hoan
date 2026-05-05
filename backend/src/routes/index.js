@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticate, checkRole } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 const {
   getProducts, getProductBySlug, getProductsAdmin, createProduct, updateProduct, deleteProduct, getProductCategories
@@ -21,8 +22,19 @@ const {
   getUsers, createUser, updateUser, deleteUser, resetUserPassword,
   getRoles, getAuditLogs, getSettings, updateSettings, getDashboard
 } = require('../controllers/adminController');
+const { updateMe } = require('../controllers/authController');
+const { getMyBookings } = require('../controllers/bookingJobController');
+const { getMyOrders } = require('../controllers/orderController');
+const { getServices, getServicesAdmin, createService, updateService, deleteService } = require('../controllers/serviceController');
+const { getGallery, getGalleryAdmin, createGalleryItem, updateGalleryItem, deleteGalleryItem } = require('../controllers/galleryController');
+const { 
+  getImagesByCategory, uploadMultipleImages, deleteImage: deleteMedia, reorderImages, updateImage
+} = require('../controllers/mediaController');
+const { createOrder, getOrdersAdmin, getOrderDetail, updateOrderStatus, deleteOrder } = require('../controllers/orderController');
+const { chatWithAI } = require('../controllers/chatController');
 
 // ═══ PUBLIC ROUTES ════════════════════════════════════════════════════════════
+router.get('/settings',                    getSettings);
 router.get('/products',                   getProducts);
 router.get('/products/:slug',             getProductBySlug);
 router.get('/product-categories',         getProductCategories);
@@ -35,9 +47,19 @@ router.get('/faqs',                       getFaqs);
 router.get('/faq-categories',             getFaqCategories);
 router.get('/testimonials',               getTestimonials);
 router.get('/jobs',                       getJobs);
+router.get('/services',                   getServices);
+router.get('/gallery',                    getGallery);
+router.get('/images/:category',           getImagesByCategory);
 
 router.post('/bookings',                  createBooking);       // khách đặt lịch
 router.post('/job-applications',          createJobApplication); // khách ứng tuyển
+router.post('/orders',                    createOrder);         // khách đặt hàng
+router.post('/chat',                      chatWithAI);          // trợ lý AI
+
+// ═══ CUSTOMER DASHBOARD (authenticate required) ════════════════════════════════
+router.put('/auth/me',                    authenticate, updateMe);
+router.get('/my-bookings',                authenticate, getMyBookings);
+router.get('/my-orders',                  authenticate, getMyOrders);
 
 // ═══ ADMIN ROUTES (authenticate required) ═════════════════════════════════════
 const a = authenticate;
@@ -85,6 +107,30 @@ router.delete('/admin/jobs/:id',          ...admin,  deleteJob);
 // Job Applications admin
 router.get('/admin/job-applications',     ...editor, getJobApplications);
 router.put('/admin/job-applications/:id', ...editor, updateJobApplication);
+
+// Services admin
+router.get('/admin/services',             ...editor, getServicesAdmin);
+router.post('/admin/services',            ...editor, createService);
+router.put('/admin/services/:id',         ...editor, updateService);
+router.delete('/admin/services/:id',      ...admin,  deleteService);
+
+// Gallery admin
+router.get('/admin/gallery',              ...editor, getGalleryAdmin);
+router.post('/admin/gallery',             ...editor, createGalleryItem);
+router.put('/admin/gallery/:id',          ...editor, updateGalleryItem);
+router.delete('/admin/gallery/:id',       ...admin,  deleteGalleryItem);
+
+// Media Management admin
+router.post('/admin/images/upload',       ...editor, upload.array('images', 10), uploadMultipleImages);
+router.put('/admin/images/:id',           ...editor, updateImage);
+router.delete('/admin/images/:id',        ...admin,  deleteMedia);
+router.put('/admin/images/reorder',       ...editor, reorderImages);
+
+// Orders admin
+router.get('/admin/orders',               ...editor, getOrdersAdmin);
+router.get('/admin/orders/:id',           ...editor, getOrderDetail);
+router.put('/admin/orders/:id',           ...editor, updateOrderStatus);
+router.delete('/admin/orders/:id',        ...admin,  deleteOrder);
 
 // Users & Roles (super_admin only)
 router.get('/admin/users',                ...suAdmin, getUsers);

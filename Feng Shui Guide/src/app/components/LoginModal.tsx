@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "../context/AuthContext.tsx";
+import { toast } from "sonner";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -8,18 +10,39 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+  const { login, register, isLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     name: "",
+    phone: "",
+    birthday: "",
+    address: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login/register logic here
-    console.log("Form submitted:", formData);
-    onClose();
+    
+    try {
+      if (isLogin) {
+        await login({ email: formData.email, password: formData.password });
+        onClose();
+      } else {
+        await register({ 
+          email: formData.email, 
+          password: formData.password, 
+          full_name: formData.name,
+          phone: formData.phone,
+          birthday: formData.birthday,
+          address: formData.address
+        });
+        setIsLogin(true); // Switch to login after successful register
+      }
+    } catch (err) {
+      // Errors are handled by toast in context
+      console.error(err);
+    }
   };
 
   return (
@@ -56,26 +79,59 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {!isLogin && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs mb-2 text-gray-400 uppercase tracking-widest font-bold">Họ Tên *</label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full bg-white/5 border border-primary/20 px-4 py-2.5 text-white focus:border-primary focus:outline-none transition-colors text-sm"
+                        placeholder="Nguyễn Văn A"
+                        required={!isLogin}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs mb-2 text-gray-400 uppercase tracking-widest font-bold">Số Điện Thoại</label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full bg-white/5 border border-primary/20 px-4 py-2.5 text-white focus:border-primary focus:outline-none transition-colors text-sm"
+                        placeholder="0912..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {!isLogin && (
                   <div>
-                    <label className="block text-sm mb-2 text-gray-300">
-                      Họ Tên
-                    </label>
+                    <label className="block text-xs mb-2 text-gray-400 uppercase tracking-widest font-bold">Ngày Sinh</label>
+                    <input
+                      type="date"
+                      value={formData.birthday}
+                      onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                      className="w-full bg-white/5 border border-primary/20 px-4 py-2.5 text-white focus:border-primary focus:outline-none transition-colors text-sm"
+                    />
+                  </div>
+                )}
+
+                {!isLogin && (
+                  <div>
+                    <label className="block text-xs mb-2 text-gray-400 uppercase tracking-widest font-bold">Địa Chỉ</label>
                     <input
                       type="text"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      className="w-full bg-black/50 border border-primary/30 px-4 py-3 text-white focus:border-primary focus:outline-none transition-colors"
-                      placeholder="Nhập họ tên"
-                      required={!isLogin}
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="w-full bg-white/5 border border-primary/20 px-4 py-2.5 text-white focus:border-primary focus:outline-none transition-colors text-sm"
+                      placeholder="Số nhà, đường, quận..."
                     />
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm mb-2 text-gray-300">
-                    Email
+                  <label className="block text-xs mb-2 text-gray-400 uppercase tracking-widest font-bold">
+                    Email *
                   </label>
                   <input
                     type="email"
@@ -83,15 +139,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    className="w-full bg-black/50 border border-primary/30 px-4 py-3 text-white focus:border-primary focus:outline-none transition-colors"
+                    className="w-full bg-white/5 border border-primary/20 px-4 py-2.5 text-white focus:border-primary focus:outline-none transition-colors text-sm"
                     placeholder="email@example.com"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm mb-2 text-gray-300">
-                    Mật Khẩu
+                  <label className="block text-xs mb-2 text-gray-400 uppercase tracking-widest font-bold">
+                    Mật Khẩu *
                   </label>
                   <input
                     type="password"
@@ -99,7 +155,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    className="w-full bg-black/50 border border-primary/30 px-4 py-3 text-white focus:border-primary focus:outline-none transition-colors"
+                    className="w-full bg-white/5 border border-primary/20 px-4 py-2.5 text-white focus:border-primary focus:outline-none transition-colors text-sm"
                     placeholder="••••••••"
                     required
                   />
@@ -109,9 +165,11 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  className="w-full bg-primary text-white py-3 tracking-wide hover:bg-primary/90 transition-colors"
+                  disabled={isLoading}
+                  className="w-full bg-primary text-white py-3 tracking-wide hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
                   style={{ fontWeight: 600 }}
                 >
+                  {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   {isLogin ? "ĐĂNG NHẬP" : "ĐĂNG KÝ"}
                 </motion.button>
               </form>

@@ -15,15 +15,20 @@ const { authenticate, checkRole } = require('./middleware/auth');
 const app = express();
 
 // ─── Security & Logging ───────────────────────────────────────────────────────
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
 app.use(morgan('dev'));
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-    process.env.ADMIN_URL    || 'http://localhost:5173',
-  ],
+  origin: function(origin, callback) {
+    if (!origin || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
@@ -34,6 +39,7 @@ app.use(express.urlencoded({ extended: true }));
 // ─── Static: serve ảnh đã upload ─────────────────────────────────────────────
 const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+console.log(`📂 Static uploads served from: ${uploadsDir}`);
 app.use('/uploads', express.static(uploadsDir));
 
 // ─── Upload Routes ────────────────────────────────────────────────────────────

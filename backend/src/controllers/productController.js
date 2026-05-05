@@ -18,12 +18,22 @@ const getProducts = async (req, res) => {
       conditions.push(`(p.name ILIKE $${idx} OR p.description ILIKE $${idx})`);
       params.push(`%${search}%`); idx++;
     }
+    const { min_price, max_price } = req.query;
+    if (min_price) { conditions.push(`p.price >= $${idx++}`); params.push(min_price); }
+    if (max_price) { conditions.push(`p.price <= $${idx++}`); params.push(max_price); }
+
+    const { sort } = req.query;
+    let orderBy = 'ORDER BY p.sort_order, p.created_at DESC';
+    if (sort === 'price_asc') orderBy = 'ORDER BY p.price ASC';
+    else if (sort === 'price_desc') orderBy = 'ORDER BY p.price DESC';
+    else if (sort === 'rating') orderBy = 'ORDER BY p.rating DESC, p.review_count DESC';
+    else if (sort === 'reviews') orderBy = 'ORDER BY p.review_count DESC, p.rating DESC';
 
     const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
     const { rows } = await pool.query(
       `SELECT p.*, pc.name as category_name, pc.slug as category_slug
        FROM products p LEFT JOIN product_categories pc ON p.category_id = pc.id
-       ${where} ORDER BY p.sort_order, p.created_at DESC
+       ${where} ${orderBy}
        LIMIT $${idx} OFFSET $${idx+1}`,
       [...params, limit, offset]
     );
@@ -120,8 +130,12 @@ const updateProduct = async (req, res) => {
     if (!old[0]) return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm' });
 
     const { rows } = await pool.query(
-      `UPDATE products SET category_id=$1, slug=$2, name=$3, description=$4, price=$5, original_price=$6,
-       image_url=$7, badge=$8, badge_color=$9, is_active=$10, is_featured=$11, sort_order=$12, updated_at=NOW()
+      `UPDATE products SET 
+       category_id=COALESCE($1,category_id), slug=COALESCE($2,slug), name=COALESCE($3,name), 
+       description=COALESCE($4,description), price=COALESCE($5,price), original_price=COALESCE($6,original_price),
+       image_url=COALESCE($7,image_url), badge=COALESCE($8,badge), badge_color=COALESCE($9,badge_color), 
+       is_active=COALESCE($10,is_active), is_featured=COALESCE($11,is_featured), sort_order=COALESCE($12,sort_order), 
+       updated_at=NOW()
        WHERE id=$13 RETURNING *`,
       [category_id, slug, name, description, price, original_price, image_url, badge, badge_color,
        is_active, is_featured, sort_order, id]

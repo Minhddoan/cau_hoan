@@ -1,6 +1,10 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
-import { X, Calendar, Clock, User, Phone, Mail, ChevronDown, CheckCircle2, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Calendar, Clock, User, Phone, Mail, ChevronDown, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
+import { postBooking } from "../../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { useSettings } from "../context/SettingsContext";
+import { toast } from "sonner";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -34,6 +38,8 @@ const consultTypes = [
 type Step = 1 | 2 | 3;
 
 export function BookingModal({ isOpen, onClose }: BookingModalProps) {
+  const { user } = useAuth();
+  const { setLoginOpen } = useSettings();
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState({
     name: "",
@@ -46,22 +52,54 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
     note: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const update = (key: string, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  const handleSubmit = () => {
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const res = await postBooking({
+        customer_name: form.name,
+        customer_phone: form.phone,
+        customer_email: form.email,
+        service_type: form.service,
+        preferred_date: form.date,
+        preferred_time: form.time,
+        note: `Hình thức: ${consultTypes.find(c => c.id === form.consultType)?.label}. ${form.note}`
+      });
+      if (res.success) {
+        setSubmitted(true);
+      }
+    } catch (err) {
+      console.error("Booking fail:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
     onClose();
+    // Reset after a short delay to avoid flickering during exit animation
     setTimeout(() => {
       setStep(1);
       setSubmitted(false);
       setForm({ name: "", phone: "", email: "", service: "", date: "", time: "", consultType: "inperson", note: "" });
-    }, 400);
+    }, 300);
   };
+
+  // Ensure reset if closed by other means
+  useEffect(() => {
+    if (!isOpen) {
+      const timer = setTimeout(() => {
+        setStep(1);
+        setSubmitted(false);
+        setForm({ name: "", phone: "", email: "", service: "", date: "", time: "", consultType: "inperson", note: "" });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   const step1Valid = form.service && form.consultType;
   const step2Valid = form.date && form.time;
@@ -358,6 +396,18 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                 )}
                 <button
                   onClick={() => {
+                    if (!user) {
+                      toast.error("Vui lòng đăng nhập để thực hiện đặt lịch tư vấn.", {
+                        action: {
+                          label: "Đăng nhập ngay",
+                          onClick: () => {
+                            setLoginOpen(true);
+                            onClose(); // Đóng modal booking để hiện login cho rõ
+                          }
+                        }
+                      });
+                      return;
+                    }
                     if (step < 3) setStep((s) => (s + 1) as Step);
                     else handleSubmit();
                   }}
@@ -366,10 +416,16 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                     (step === 2 && !step2Valid) ||
                     (step === 3 && !step3Valid)
                   }
-                  className="flex-1 py-3.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-all text-sm rounded-sm"
+                  className="flex-1 py-3.5 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-all text-sm rounded-sm flex items-center justify-center gap-2"
                   style={{ fontWeight: 700 }}
                 >
-                  {step < 3 ? "Tiếp tục →" : "✦ Xác Nhận Đặt Lịch"}
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : step < 3 ? (
+                    "Tiếp tục →"
+                  ) : (
+                    "✦ Xác Nhận Đặt Lịch"
+                  )}
                 </button>
               </div>
             )}

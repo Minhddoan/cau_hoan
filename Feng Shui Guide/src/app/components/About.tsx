@@ -1,14 +1,33 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import { CheckCircle2, Award, Users, Target, Star, ArrowRight, Calendar, BookOpen } from "lucide-react";
-import { Link } from "react-router";
-import { BookingModal } from "./BookingModal.tsx";
+import { Link, useNavigate } from "react-router";
+import { useSettings } from "../context/SettingsContext.tsx";
+import { useAuth } from "../context/AuthContext.tsx";
+import { toast } from "sonner";
+import { DynamicSlider } from "./DynamicSlider.tsx";
 
 const masterImg = "https://images.unsplash.com/photo-1768478563694-b9b38533f2f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx2aWV0bmFtZXNlJTIwbWFzdGVyJTIwdGVhY2hlciUyMHRyYWRpdGlvbmFsfGVufDF8fHx8MTc3NTc4OTA1Nnww&ixlib=rb-4.1.0&q=80&w=1080";
-const companyImg = "https://images.unsplash.com/photo-1531364380693-8f16a988e6d3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmZW5nJTIwc2h1aSUyMHplbiUyMGludGVyaW9yJTIwbHV4dXJ5JTIwZGFya3xlbnwxfHx8fDE3NTc4OTA1Nnww&ixlib=rb-4.1.0&q=80&w=1080";
+const defaultCompanyImg = "https://images.unsplash.com/photo-1531364380693-8f16a988e6d3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmZW5nJTIwc2h1aSUyMHplbiUyMGludGVyaW9yJTIwbHV4dXJ5JTIwZGFya3xlbnwxfHx8fDE3NTc4OTA1Nnww&ixlib=rb-4.1.0&q=80&w=1080";
 
 export function About() {
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const { settings, getAssetUrl, setBookingOpen, setLoginOpen } = useSettings();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const companyImg = settings.about_banner ? getAssetUrl(settings.about_banner) : defaultCompanyImg;
+
+  const handleBookingClick = () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để đặt lịch gặp Thầy Song Vũ.", {
+        action: {
+          label: "Đăng nhập ngay",
+          onClick: () => setLoginOpen(true)
+        }
+      });
+      return;
+    }
+    setBookingOpen(true);
+  };
 
   const stats = [
     { icon: Award, label: "Năm Kinh Nghiệm", value: "15+" },
@@ -32,11 +51,11 @@ export function About() {
               transition={{ duration: 0.8 }}
               className="relative"
             >
-              <div className="relative z-10 overflow-hidden shadow-2xl shadow-black/60">
-                <img
-                  src={companyImg}
-                  alt="Phong Thủy Song Vũ"
-                  className="w-full h-[480px] object-cover brightness-75 hover:brightness-90 transition-all duration-700"
+              <div className="relative z-10 overflow-hidden shadow-2xl shadow-black/60 h-[480px]">
+                <DynamicSlider 
+                  category="about_company_gallery" 
+                  className="w-full h-full"
+                  overlayClassName="absolute inset-0 bg-black/20 hover:bg-black/10 transition-colors"
                 />
                 {/* Gold frame overlay */}
                 <div className="absolute inset-0 border border-gold/20 pointer-events-none" />
@@ -130,7 +149,7 @@ export function About() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gold rounded-full blur-[150px]" />
         </div>
 
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             {/* Text Side */}
             <motion.div
@@ -183,7 +202,7 @@ export function About() {
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => setIsBookingOpen(true)}
+                  onClick={handleBookingClick}
                   className="inline-flex items-center gap-3 bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-full transition-all shadow-xl shadow-primary/20"
                   style={{ fontWeight: 700 }}
                 >
@@ -191,17 +210,17 @@ export function About() {
                   Đặt Lịch Gặp Thầy
                 </motion.button>
 
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Link
-                    to="/thay-song-vu"
-                    className="inline-flex items-center gap-2 border border-gold/40 hover:border-gold text-gold hover:bg-gold/5 px-8 py-4 rounded-full transition-all"
-                    style={{ fontWeight: 600 }}
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    Tìm hiểu thêm về Thầy
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </motion.div>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => navigate("/thay-song-vu")}
+                  className="inline-flex items-center gap-2 border border-gold/40 hover:border-gold text-gold hover:bg-gold/5 px-8 py-4 rounded-full transition-all"
+                  style={{ fontWeight: 600 }}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Tìm hiểu thêm về Thầy
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
               </div>
             </motion.div>
 
@@ -213,15 +232,14 @@ export function About() {
               transition={{ duration: 0.8 }}
               className="relative"
             >
-              <div className="relative overflow-hidden shadow-2xl">
-                <img
-                  src={masterImg}
-                  alt="Thầy Song Vũ"
-                  className="w-full h-[520px] object-cover object-top brightness-75 hover:brightness-90 transition-all duration-700"
+              <div className="relative overflow-hidden shadow-2xl h-[520px]">
+                <DynamicSlider 
+                  category="about_master_slider"
+                  className="w-full h-full"
+                  overlayClassName="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 <div className="absolute inset-0 border border-gold/20 pointer-events-none" />
-                <div className="absolute bottom-8 left-8 right-8">
+                <div className="absolute bottom-8 left-8 right-8 z-20">
                   <div className="bg-black/80 backdrop-blur-sm border border-gold/20 p-4">
                     <p className="text-gold/90 italic text-sm leading-relaxed">
                       "Phong thủy không phải là mê tín, mà là nghệ thuật sắp xếp không gian thuận theo quy luật tự nhiên."
@@ -236,8 +254,6 @@ export function About() {
         </div>
       </section>
 
-      {/* BookingModal rendered at root level of About (outside sections) */}
-      <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
     </>
   );
 }

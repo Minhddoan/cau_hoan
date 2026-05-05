@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
   ChevronRight,
@@ -25,7 +25,9 @@ import {
   X,
   Upload,
   User,
+  Loader2,
 } from "lucide-react";
+import { getJobs, postJobApplication } from "../../lib/api";
 
 // ─── Images ───────────────────────────────────────────────────────────────────
 const heroImg   = "https://images.unsplash.com/photo-1680946496238-5272d3c407fc?w=1600";
@@ -50,112 +52,7 @@ interface Job {
   deadline: string;
 }
 
-const JOBS: Job[] = [
-  {
-    id: "tu-van-phong-thuy",
-    title: "Chuyên Viên Tư Vấn Phong Thủy",
-    dept: "Tư Vấn",
-    type: "fulltime",
-    location: "Hà Nội / TP.HCM",
-    salary: "15 – 30 triệu/tháng",
-    hot: true,
-    tags: ["Phong thủy", "Tư vấn", "Kinh nghiệm 2+ năm"],
-    desc: "Trực tiếp tư vấn phong thủy cho khách hàng cá nhân và doanh nghiệp dưới sự hướng dẫn của Thầy Song Vũ. Lập hồ sơ, thực hiện khảo sát thực địa và theo dõi khách hàng sau tư vấn.",
-    requirements: [
-      "Có kiến thức cơ bản về phong thủy (Bát Trạch, Tứ Trụ)",
-      "Tốt nghiệp đại học hoặc tương đương",
-      "Giao tiếp tốt, thái độ chuyên nghiệp",
-      "Ưu tiên có kinh nghiệm tư vấn 2+ năm",
-      "Sẵn sàng di chuyển khảo sát thực địa",
-    ],
-    benefits: ["Lương cứng + hoa hồng không giới hạn", "Được đào tạo chuyên sâu bởi Thầy Song Vũ", "Cơ hội phát triển thành chuyên gia độc lập", "BHXH đầy đủ + thưởng hiệu suất"],
-    deadline: "30/05/2026",
-  },
-  {
-    id: "content-creator",
-    title: "Content Creator – Phong Thủy & Tâm Linh",
-    dept: "Marketing",
-    type: "fulltime",
-    location: "Hà Nội (Remote linh hoạt)",
-    salary: "12 – 20 triệu/tháng",
-    urgent: true,
-    tags: ["Content", "Social Media", "Video", "Copywriting"],
-    desc: "Sản xuất nội dung chất lượng cao về phong thủy, mệnh học và văn hóa Á Đông cho website, mạng xã hội và kênh YouTube. Kết hợp kiến thức phong thủy với kỹ năng sáng tạo nội dung.",
-    requirements: [
-      "Kinh nghiệm viết content / sản xuất video 1+ năm",
-      "Yêu thích phong thủy, tâm linh, văn hóa truyền thống",
-      "Kỹ năng viết hấp dẫn, SEO cơ bản",
-      "Biết dùng Canva, CapCut hoặc tương đương",
-      "Có kênh mạng xã hội cá nhân là lợi thế",
-    ],
-    benefits: ["Môi trường sáng tạo tự do", "Làm việc remote linh hoạt", "Bonus nếu nội dung viral", "Học phong thủy miễn phí"],
-    deadline: "20/05/2026",
-  },
-  {
-    id: "kinh-doanh",
-    title: "Chuyên Viên Kinh Doanh (B2B)",
-    dept: "Kinh Doanh",
-    type: "fulltime",
-    location: "TP.HCM",
-    salary: "10 triệu + hoa hồng",
-    tags: ["Sales", "B2B", "Doanh nghiệp"],
-    desc: "Phát triển khách hàng doanh nghiệp cho dịch vụ hồ sơ phong thủy công ty, phong thủy văn phòng và các gói tư vấn thương mại. Xây dựng quan hệ đối tác với chủ đầu tư, nhà hàng, khách sạn.",
-    requirements: [
-      "Kinh nghiệm bán hàng B2B 1+ năm",
-      "Có mạng lưới khách hàng doanh nghiệp sẵn là lợi thế",
-      "Tự tin thuyết trình trước đám đông",
-      "Định hướng kết quả, chịu được áp lực",
-    ],
-    benefits: ["Hoa hồng cạnh tranh (5–10%/hợp đồng)", "Xe + xăng + điện thoại công ty", "Thưởng vượt chỉ tiêu hấp dẫn", "Lộ trình lên Trưởng nhóm kinh doanh"],
-    deadline: "15/06/2026",
-  },
-  {
-    id: "cskh",
-    title: "Chuyên Viên Chăm Sóc Khách Hàng",
-    dept: "Dịch Vụ KH",
-    type: "fulltime",
-    location: "Hà Nội",
-    salary: "8 – 12 triệu/tháng",
-    tags: ["CSKH", "Zalo", "Tư vấn online"],
-    desc: "Tiếp nhận và xử lý yêu cầu từ khách hàng qua Zalo, điện thoại và website. Tư vấn gói dịch vụ ban đầu, lên lịch hẹn và hỗ trợ sau khi khách nhận hồ sơ tư vấn.",
-    requirements: [
-      "Giọng nói dễ nghe, thân thiện",
-      "Kỹ năng xử lý tình huống tốt",
-      "Thành thạo Zalo, tin nhắn, email",
-      "Yêu thích phong thủy là lợi thế lớn",
-    ],
-    benefits: ["Ca làm việc linh hoạt", "Đào tạo kiến thức phong thủy cơ bản", "Môi trường nhỏ, thân thiện", "Review lương 6 tháng/lần"],
-    deadline: "01/06/2026",
-  },
-  {
-    id: "thuc-tap",
-    title: "Thực Tập Sinh – Marketing / Nội Dung",
-    dept: "Marketing",
-    type: "intern",
-    location: "Hà Nội (Hybrid)",
-    salary: "3 – 5 triệu/tháng",
-    tags: ["Thực tập", "Marketing", "Sinh viên"],
-    desc: "Chương trình thực tập 3–6 tháng dành cho sinh viên ngành Marketing, Truyền thông, Báo chí. Học cách xây dựng thương hiệu cá nhân và doanh nghiệp trong lĩnh vực phong thủy.",
-    requirements: [
-      "Sinh viên năm 3–4 hoặc mới ra trường",
-      "Đam mê nội dung số, mạng xã hội",
-      "Chủ động, sáng tạo và ham học hỏi",
-      "Có thể làm việc 4–5 buổi/tuần",
-    ],
-    benefits: ["Phụ cấp thực tập cạnh tranh", "Hướng dẫn trực tiếp từ senior", "Có thể chuyển chính thức sau thực tập", "Giấy chứng nhận thực tập có giá trị"],
-    deadline: "Tuyển liên tục",
-  },
-];
-
-const PERKS = [
-  { icon: Award,     title: "Học Từ Chuyên Gia",      desc: "Được đào tạo trực tiếp bởi Thầy Song Vũ – 30 năm kinh nghiệm phong thủy" },
-  { icon: TrendingUp,title: "Lộ Trình Rõ Ràng",        desc: "Hệ thống thăng tiến minh bạch, review lương 2 lần/năm theo hiệu suất thực tế" },
-  { icon: Shield,    title: "Ổn Định & Bền Vững",      desc: "Công ty hoạt động 15+ năm, khách hàng trung thành, doanh thu tăng trưởng đều" },
-  { icon: Heart,     title: "Môi Trường Tích Cực",     desc: "Đội ngũ nhỏ, gắn kết, cởi mở — không đấu đá nội bộ, làm việc vì mục tiêu chung" },
-  { icon: Sparkles,  title: "Ý Nghĩa Công Việc",       desc: "Mỗi ngày bạn giúp hàng trăm người cải thiện cuộc sống qua phong thủy thực tế" },
-  { icon: BookOpen,  title: "Học Phong Thủy Miễn Phí", desc: "Toàn bộ nhân viên được học kiến thức phong thủy chính thức từ Thầy Song Vũ" },
-];
-
+// Mảng JOBS giờ sẽ được fetch từ API
 const DEPT_COLORS: Record<string, string> = {
   "Tư Vấn": "bg-gold/15 text-gold border-gold/30",
   "Marketing": "bg-purple-500/15 text-purple-400 border-purple-500/30",
@@ -174,12 +71,29 @@ type FilterType = "all" | "fulltime" | "parttime" | "intern";
 
 // ─── Apply Modal ──────────────────────────────────────────────────────────────
 function ApplyModal({ job, onClose }: { job: Job; onClose: () => void }) {
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", email: "", note: "" });
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    try {
+      const res = await postJobApplication({
+        job_id: job.id,
+        applicant_name: form.name,
+        applicant_phone: form.phone,
+        applicant_email: form.email,
+        cover_letter: form.note
+      });
+      if (res.success) {
+        setSubmitted(true);
+      }
+    } catch (err) {
+      console.error("Apply fail:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -243,10 +157,10 @@ function ApplyModal({ job, onClose }: { job: Job; onClose: () => void }) {
                 <p className="text-white/30 text-xs">Đính kèm CV (PDF, DOC) — hoặc gửi qua email bên dưới</p>
               </div>
 
-              <button type="submit"
-                className="w-full bg-gold text-black py-3.5 font-bold text-xs uppercase tracking-[0.2em] hover:bg-gold/90 transition-all shadow-lg shadow-gold/20 rounded-xl flex items-center justify-center gap-2"
+              <button type="submit" disabled={loading}
+                className="w-full bg-gold text-black py-3.5 font-bold text-xs uppercase tracking-[0.2em] hover:bg-gold/90 transition-all shadow-lg shadow-gold/20 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Send className="w-4 h-4" /> Gửi Đơn Ứng Tuyển
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Gửi Đơn Ứng Tuyển
               </button>
               <p className="text-white/20 text-[10px] text-center">Hoặc gửi CV trực tiếp qua email: <span className="text-gold/60">tuyendung@phongthuysongvu.com</span></p>
             </form>
@@ -391,12 +305,47 @@ function JobCard({ job, onApply }: { job: Job; onApply: (job: Job) => void }) {
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+const PERKS = [
+  { icon: Award,     title: "Học Từ Chuyên Gia",      desc: "Được đào tạo trực tiếp bởi Thầy Song Vũ – 30 năm kinh nghiệm phong thủy" },
+  { icon: TrendingUp,title: "Lộ Trình Rõ Ràng",        desc: "Hệ thống thăng tiến minh bạch, review lương 2 lần/năm theo hiệu suất thực tế" },
+  { icon: Shield,    title: "Ổn Định & Bền Vững",      desc: "Công ty hoạt động 15+ năm, khách hàng trung thành, doanh thu tăng trưởng đều" },
+  { icon: Heart,     title: "Môi Trường Tích Cực",     desc: "Đội ngũ nhỏ, gắn kết, cởi mở — không đấu đá nội bộ, làm việc vì mục tiêu chung" },
+  { icon: Sparkles,  title: "Ý Nghĩa Công Việc",       desc: "Mỗi ngày bạn giúp hàng trăm người cải thiện cuộc sống qua phong thủy thực tế" },
+  { icon: BookOpen,  title: "Học Phong Thủy Miễn Phí", desc: "Toàn bộ nhân viên được học kiến thức phong thủy chính thức từ Thầy Song Vũ" },
+];
+
 export function RecruitmentPage() {
+  const [jobsList, setJobsList] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterDept, setFilterDept] = useState<FilterDept>("all");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [applyJob, setApplyJob]     = useState<Job | null>(null);
 
-  const filtered = JOBS.filter(j =>
+  useEffect(() => {
+    const loadJobs = async () => {
+      try {
+        const res = await getJobs();
+        if (res.success) {
+          setJobsList(res.data.map((j: any) => ({
+            ...j,
+            dept: j.department,
+            type: j.job_type,
+            salary: j.salary_range,
+            hot: j.is_hot,
+            urgent: j.is_urgent,
+            deadline: j.deadline ? new Date(j.deadline).toLocaleDateString('vi-VN') : 'Liên tục'
+          })));
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadJobs();
+  }, []);
+
+  const filtered = jobsList.filter(j =>
     (filterDept === "all" || j.dept === filterDept) &&
     (filterType === "all" || j.type === filterType)
   );
@@ -431,8 +380,8 @@ export function RecruitmentPage() {
           className="absolute top-40 right-8 lg:right-20 border border-gold/25 bg-black/60 backdrop-blur-md px-5 py-3 hidden md:block"
         >
           <p className="text-gold text-xs font-bold uppercase tracking-widest mb-0.5">Đang Tuyển</p>
-          <p className="text-white text-2xl font-extrabold">{JOBS.length} Vị Trí</p>
-          <p className="text-white/40 text-[10px]">Cập nhật tháng 04/2026</p>
+          <p className="text-white text-2xl font-extrabold">{jobsList.length} Vị Trí</p>
+          <p className="text-white/40 text-[10px]">Cập nhật {new Date().toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' })}</p>
         </motion.div>
 
         <div className="relative container mx-auto px-6 pb-20 pt-36">
@@ -577,23 +526,29 @@ export function RecruitmentPage() {
 
           {/* Results count */}
           <p className="text-white/30 text-xs text-center mb-8 uppercase tracking-widest">
-            Hiển thị <span className="text-gold font-bold">{filtered.length}</span> / {JOBS.length} vị trí
+            Hiển thị <span className="text-gold font-bold">{filtered.length}</span> / {jobsList.length} vị trí
           </p>
 
           {/* Job cards */}
           <div className="space-y-4 max-w-4xl mx-auto">
-            <AnimatePresence mode="sync">
-              {filtered.length > 0 ? filtered.map(job => (
-                <JobCard key={job.id} job={job} onApply={setApplyJob} />
-              )) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="border border-white/8 p-12 text-center"
-                >
-                  <Users className="w-10 h-10 text-white/15 mx-auto mb-3" />
-                  <p className="text-white/40">Không có vị trí phù hợp với bộ lọc này.</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {loading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="w-10 h-10 text-gold animate-spin" />
+              </div>
+            ) : (
+              <AnimatePresence mode="sync">
+                {filtered.length > 0 ? filtered.map(job => (
+                  <JobCard key={job.id} job={job} onApply={setApplyJob} />
+                )) : (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="border border-white/8 p-12 text-center"
+                  >
+                    <Users className="w-10 h-10 text-white/15 mx-auto mb-3" />
+                    <p className="text-white/40">Không có vị trí phù hợp với bộ lọc này.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
           </div>
         </div>
       </section>

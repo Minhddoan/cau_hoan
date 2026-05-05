@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
   ChevronRight,
@@ -23,15 +23,16 @@ import {
   Info,
   Sun,
   Moon,
+  Loader2
 } from "lucide-react";
-import { BookingModal } from "../components/BookingModal.tsx";
+import { useSettings } from "../context/SettingsContext.tsx";
+import { useAuth } from "../context/AuthContext.tsx";
+import { toast } from "sonner";
+import { getServices } from "../../lib/api";
 
-// ─── Images ───────────────────────────────────────────────────────────────────
 const heroImg    = "https://images.unsplash.com/photo-1597559660288-29a2e2518036?w=1600";
 const weddingImg = "https://images.unsplash.com/photo-1761668572818-e03a4f8fc716?w=800";
 const buildImg   = "https://images.unsplash.com/photo-1704308875463-79b12d868d86?w=800";
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
 
 const EVENT_TYPES = [
   { id: "cuoi",       label: "Cưới Hỏi",        icon: Heart,         color: "text-red-400",    bg: "bg-red-400/10",    border: "border-red-400/20",   desc: "Xem ngày tốt cho lễ đính hôn, lễ cưới, lễ hỏi, rước dâu" },
@@ -44,59 +45,6 @@ const EVENT_TYPES = [
   { id: "khac",       label: "Việc Khác",        icon: Sparkles,      color: "text-white/60",   bg: "bg-white/5",       border: "border-white/10",     desc: "Các sự kiện quan trọng khác: nhậm chức, thi cử, chữa bệnh..." },
 ];
 
-const PACKAGES = [
-  {
-    name: "Xem Ngày Cơ Bản",
-    price: "500.000",
-    duration: "1–2 ngày làm việc",
-    highlight: false,
-    badge: "",
-    features: [
-      "1 sự kiện / loại ngày cần xem",
-      "Chọn 3–5 ngày tốt nhất trong tháng",
-      "Giờ hoàng đạo phù hợp với mỗi ngày",
-      "Lý giải ngắn gọn theo tuổi",
-      "Giao kết quả qua Zalo / Email",
-    ],
-    deliverables: ["Bảng PDF 1–2 trang", "Phản hồi trong 48 giờ"],
-    note: "",
-  },
-  {
-    name: "Xem Ngày Toàn Diện",
-    price: "1.500.000",
-    duration: "2–3 ngày làm việc",
-    highlight: true,
-    badge: "Phổ Biến",
-    features: [
-      "Tối đa 3 sự kiện cùng lúc",
-      "Xem trong 1–3 tháng liên tiếp",
-      "Kết hợp Tứ Trụ mệnh số cá nhân",
-      "Phân tích chi tiết từng ngày được chọn",
-      "Giờ khởi sự & nghi lễ cụ thể",
-      "Hỗ trợ Q&A sau khi nhận kết quả",
-    ],
-    deliverables: ["Báo cáo PDF 10–15 trang", "Tư vấn trực tiếp 30 phút", "Hỗ trợ Q&A 1 tháng"],
-    note: "",
-  },
-  {
-    name: "Lịch Năm Cá Nhân",
-    price: "3.500.000",
-    duration: "3–5 ngày làm việc",
-    highlight: false,
-    badge: "VIP",
-    features: [
-      "Lịch cát hung cá nhân cả năm",
-      "Đánh dấu ngày tốt / xấu theo mệnh",
-      "Tháng thuận lợi cho từng lĩnh vực",
-      "Ngày kỵ cần tránh theo tuổi",
-      "Cập nhật theo Huyền Không phi tinh năm",
-      "Tư vấn chiến lược theo vận hạn",
-    ],
-    deliverables: ["Lịch năm PDF đẹp – có thể in", "2 buổi tư vấn trực tiếp", "Hỗ trợ không giới hạn 6 tháng"],
-    note: "",
-  },
-];
-
 const HOW_IT_WORKS = [
   { step: "01", icon: Phone,     title: "Gửi Yêu Cầu",      desc: "Liên hệ qua Zalo / Website cung cấp loại sự kiện, tuổi (ngày/tháng/năm sinh) và thời gian dự kiến muốn tổ chức.",       color: "text-gold",    border: "border-gold/30"    },
   { step: "02", icon: Calendar,  title: "Phân Tích Mệnh",    desc: "Thầy Song Vũ phân tích Tứ Trụ, Bát Tự, Can Chi của bạn để xác định các yếu tố cần tránh và ngày hướng tốt.",             color: "text-red-400", border: "border-red-400/30" },
@@ -104,7 +52,6 @@ const HOW_IT_WORKS = [
   { step: "04", icon: Star,      title: "Nhận Kết Quả",      desc: "Bạn nhận được báo cáo chi tiết với các ngày tốt được sắp xếp ưu tiên, kèm giờ hoàng đạo và nghi lễ cần chuẩn bị.",       color: "text-red-400", border: "border-red-400/30" },
 ];
 
-// Calendar display mock
 const MONTH_SAMPLE = [
   { day: 1,  lunar: "M4/5",  rating: "normal", star: "" },
   { day: 2,  lunar: "M4/6",  rating: "good",   star: "✦" },
@@ -153,19 +100,48 @@ const FAQS = [
   { q: "Kết quả xem ngày có bảo đảm không?",                     a: "Phong thủy không thể bảo đảm 100% kết quả vì còn phụ thuộc vào nỗ lực cá nhân và nhiều yếu tố khác. Tuy nhiên, chọn ngày đúng giúp khởi đầu thuận lợi, giảm cản trở và tăng năng lượng tích cực cho sự kiện. Cam kết mọi kết quả đều dựa trên phương pháp học thuật chính thống, không phán đoán cảm tính." },
 ];
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export function AuspiciousDatePage() {
+  const { setBookingOpen, setLoginOpen } = useSettings();
+  const { user } = useAuth();
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [selectedDay, setSelectedDay]     = useState<number | null>(null);
   const [calMonth, setCalMonth]           = useState(5);
   const [openFaq, setOpenFaq]             = useState<number | null>(null);
-  const [isBookingOpen, setBooking]       = useState(false);
-  const [activePackage, setActivePackage] = useState(1);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [activePackageId, setActivePackageId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const handleBookingClick = () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để đặt lịch xem ngày tốt.", {
+        action: { label: "Đăng nhập ngay", onClick: () => setLoginOpen(true) }
+      });
+      return;
+    }
+    setBookingOpen(true);
+  };
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    const fetchServices = async () => {
+      setLoading(true);
+      try {
+        const res = await getServices();
+        if (res.success) {
+          setPackages(res.data);
+          if (res.data.length > 0) setActivePackageId(res.data[0].id);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchServices();
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white">
-
-      {/* ── HERO ── */}
       <section className="relative min-h-[70vh] flex items-end overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroImg} alt="Xem Ngày" className="w-full h-full object-cover" />
@@ -173,11 +149,8 @@ export function AuspiciousDatePage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/85 to-transparent" />
         </div>
 
-        {/* Decorative circles */}
         <div className="absolute top-24 right-16 w-64 h-64 border border-gold/10 rounded-full pointer-events-none" />
         <div className="absolute top-28 right-20 w-52 h-52 border border-gold/8 rounded-full pointer-events-none" />
-        <div className="absolute top-40 right-28 w-28 h-28 border border-gold/15 rounded-full pointer-events-none hidden lg:block" />
-        {/* Bagua symbols */}
         <div className="absolute top-1/2 right-24 -translate-y-1/2 text-gold/5 text-[180px] select-none hidden xl:block leading-none">
           ☯
         </div>
@@ -204,7 +177,6 @@ export function AuspiciousDatePage() {
               Kết hợp Vạn Niên Lịch, Tứ Trụ và Hoàng Đạo Lục Hợp.
             </p>
 
-            {/* Quick stats */}
             <div className="flex flex-wrap gap-10 mb-10">
               {[["5.000+","Ngày Đã Xem"],["8","Loại Sự Kiện"],["98%","Hài Lòng"],["24h","Giao Khẩn"]].map(([v,l],i)=>(
                 <div key={i} className="text-center">
@@ -214,7 +186,7 @@ export function AuspiciousDatePage() {
               ))}
             </div>
 
-            <button onClick={() => setBooking(true)}
+            <button onClick={handleBookingClick}
               className="inline-flex items-center gap-3 bg-red-600 hover:bg-red-500 text-white px-10 py-4 transition-all shadow-lg shadow-red-600/20 font-bold text-sm uppercase tracking-widest"
             >
               <Calendar className="w-5 h-5" /> Đặt Lịch Xem Ngày
@@ -223,7 +195,6 @@ export function AuspiciousDatePage() {
         </div>
       </section>
 
-      {/* ── EVENT TYPES ── */}
       <section className="py-20 bg-black border-b border-white/5">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
@@ -233,7 +204,6 @@ export function AuspiciousDatePage() {
               <div className="h-px w-12 bg-gold/50" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold">Chúng Tôi Xem Ngày <span className="text-gold">Cho Gì?</span></h2>
-            <p className="text-white/40 mt-3 font-light">Nhấp vào từng loại để xem chi tiết</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -258,14 +228,14 @@ export function AuspiciousDatePage() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className={`text-xs leading-relaxed overflow-hidden ${ev.color} opacity-80`}
+                      className={`text-xs leading-relaxed overflow-hidden ${ev.color} opacity-80 mt-2`}
                     >
                       {ev.desc}
                     </motion.p>
                   )}
                 </AnimatePresence>
                 {selectedEvent !== ev.id && (
-                  <p className="text-white/30 text-xs line-clamp-2 leading-relaxed">{ev.desc}</p>
+                  <p className="text-white/30 text-xs line-clamp-2 leading-relaxed mt-2">{ev.desc}</p>
                 )}
               </motion.button>
             ))}
@@ -273,16 +243,10 @@ export function AuspiciousDatePage() {
         </div>
       </section>
 
-      {/* ── DEMO CALENDAR ── */}
       <section className="py-20 bg-black border-b border-white/5">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-
-            {/* Left: info */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }} transition={{ duration: 0.6 }}
-            >
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-px w-12 bg-gold/50" />
                 <span className="text-gold/80 uppercase tracking-[0.2em] text-xs font-bold">Minh Họa</span>
@@ -295,7 +259,6 @@ export function AuspiciousDatePage() {
                 Màu sắc trên lịch phản ánh mức độ cát hung của từng ngày với mệnh của bạn.
               </p>
 
-              {/* Legend */}
               <div className="space-y-3">
                 {[
                   { ...ratingStyle.great, label: "Đại Cát – Rất tốt để thực hiện", icon: "★" },
@@ -311,48 +274,29 @@ export function AuspiciousDatePage() {
                   </div>
                 ))}
               </div>
-
-              <div className="mt-8 p-4 border border-gold/15 bg-gold/3 rounded-xl">
-                <p className="text-gold/80 text-xs uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
-                  <Info className="w-3.5 h-3.5" /> Lưu ý quan trọng
-                </p>
-                <p className="text-white/40 text-xs leading-relaxed">
-                  Lịch minh họa bên phải chỉ là ví dụ tổng quát. Lịch thực tế của bạn sẽ
-                  được cá nhân hóa hoàn toàn dựa trên Tứ Trụ và loại sự kiện cụ thể.
-                </p>
-              </div>
             </motion.div>
 
-            {/* Right: demo calendar */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }} transition={{ duration: 0.6 }}
-            >
-              {/* Calendar header */}
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
               <div className="border border-white/10 rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between p-4 bg-white/3 border-b border-white/8">
-                  <button onClick={() => setCalMonth(m => Math.max(1, m - 1))}
-                    className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-gold transition-colors">
+                  <button onClick={() => setCalMonth(m => Math.max(1, m - 1))} className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-gold transition-colors">
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <div className="text-center">
                     <p className="text-white font-bold uppercase tracking-widest text-sm">Tháng {calMonth} – 2026</p>
                     <p className="text-gold/50 text-xs">Ví dụ minh họa</p>
                   </div>
-                  <button onClick={() => setCalMonth(m => Math.min(12, m + 1))}
-                    className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-gold transition-colors">
+                  <button onClick={() => setCalMonth(m => Math.min(12, m + 1))} className="w-8 h-8 flex items-center justify-center text-white/40 hover:text-gold transition-colors">
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* Day headers */}
                 <div className="grid grid-cols-7 border-b border-white/5">
                   {["CN","T2","T3","T4","T5","T6","T7"].map(d => (
                     <div key={d} className="py-2 text-center text-white/30 text-[10px] uppercase tracking-wider">{d}</div>
                   ))}
                 </div>
 
-                {/* Days grid */}
                 <div className="grid grid-cols-7 gap-px bg-white/5">
                   {MONTH_SAMPLE.map((day) => {
                     const style = ratingStyle[day.rating as keyof typeof ratingStyle];
@@ -375,24 +319,16 @@ export function AuspiciousDatePage() {
                   })}
                 </div>
 
-                {/* Selected day detail */}
                 <AnimatePresence>
                   {selectedDay !== null && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                       {(() => {
                         const day = MONTH_SAMPLE.find(d => d.day === selectedDay)!;
                         const style = ratingStyle[day.rating as keyof typeof ratingStyle];
                         return (
                           <div className={`p-4 border-t border-white/8 ${style.bg}`}>
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-white font-bold text-sm">
-                                {selectedDay} tháng {calMonth}, 2026
-                              </span>
+                              <span className="text-white font-bold text-sm">{selectedDay} tháng {calMonth}, 2026</span>
                               <span className={`text-xs font-bold uppercase tracking-widest px-2 py-1 border ${style.border} ${style.text}`}>
                                 {style.label || "Bình Thường"}
                               </span>
@@ -415,7 +351,6 @@ export function AuspiciousDatePage() {
         </div>
       </section>
 
-      {/* ── PACKAGES ── */}
       <section className="py-24 bg-black border-b border-white/5">
         <div className="container mx-auto px-6">
           <div className="text-center mb-14">
@@ -428,76 +363,73 @@ export function AuspiciousDatePage() {
             <p className="text-white/40 mt-3 font-light max-w-lg mx-auto">Từ nhu cầu đơn giản đến kế hoạch năm toàn diện</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {PACKAGES.map((pkg, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                onClick={() => setActivePackage(i)}
-                className={`relative flex flex-col border p-7 cursor-pointer transition-all duration-300 hover:-translate-y-1
-                  ${pkg.highlight
-                    ? "border-gold bg-gold/5 shadow-2xl shadow-gold/10"
-                    : activePackage === i
-                      ? "border-white/25 bg-white/5"
-                      : "border-white/8 bg-white/2 hover:border-white/20"
-                  }`}
-              >
-                {pkg.badge && (
-                  <div className={`absolute -top-3 left-6 px-4 py-1 text-[10px] uppercase tracking-wider font-bold
-                    ${pkg.highlight ? "bg-gold text-black" : "bg-red-600 text-white"}`}>
-                    {pkg.badge}
-                  </div>
-                )}
+          {loading ? (
+             <div className="flex justify-center">
+               <Loader2 className="w-10 h-10 text-red-500 animate-spin" />
+             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {packages.map((pkg, i) => {
+                const isHighlight = i === 1; // Highlight the middle one usually
+                return (
+                  <motion.div
+                    key={pkg.id}
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                    onClick={() => setActivePackageId(pkg.id)}
+                    className={`relative flex flex-col border p-7 cursor-pointer transition-all duration-300 hover:-translate-y-1
+                      ${isHighlight ? "border-gold bg-gold/5 shadow-2xl shadow-gold/10" 
+                        : activePackageId === pkg.id ? "border-white/25 bg-white/5" 
+                        : "border-white/8 bg-white/2 hover:border-white/20"}`}
+                  >
+                    {isHighlight && (
+                      <div className="absolute -top-3 left-6 px-4 py-1 text-[10px] uppercase tracking-wider font-bold bg-gold text-black">
+                        Phổ Biến
+                      </div>
+                    )}
+                    
+                    <h4 className="text-white font-bold text-lg mb-2">{pkg.name}</h4>
+                    <div className="mb-1">
+                      <span className={`text-2xl font-extrabold ${isHighlight ? "text-gold" : "text-white"}`}>
+                        {Number(pkg.price_from).toLocaleString("vi-VN")}đ
+                        {pkg.price_to && ` - ${Number(pkg.price_to).toLocaleString("vi-VN")}đ`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-white/30 text-xs mb-5 uppercase tracking-widest">
+                      <Clock className="w-3 h-3" /> {pkg.duration || 'Liên hệ'}
+                    </div>
 
-                <h4 className="text-white font-bold text-lg mb-2">{pkg.name}</h4>
-                <div className="mb-1">
-                  <span className={`text-2xl font-extrabold ${pkg.highlight ? "text-gold" : "text-white"}`}>
-                    {pkg.price}đ
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-white/30 text-xs mb-5">
-                  <Clock className="w-3 h-3" /> {pkg.duration}
-                </div>
+                    <ul className="space-y-2 mb-6 flex-1">
+                      {(pkg.features || []).map((f: string, fi: number) => (
+                        <li key={fi} className="flex items-start gap-2 text-white/55 text-sm">
+                          <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${isHighlight ? "text-gold" : "text-white/25"}`} />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
 
-                <ul className="space-y-2 mb-6 flex-1">
-                  {pkg.features.map((f, fi) => (
-                    <li key={fi} className="flex items-start gap-2 text-white/55 text-sm">
-                      <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${pkg.highlight ? "text-gold" : "text-white/25"}`} />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+                    <div className="border-t border-white/8 pt-4 space-y-1 mb-6">
+                      {(pkg.deliverables || []).map((d: string, di: number) => (
+                        <p key={di} className="text-white/40 text-xs flex items-center gap-1.5">
+                          <span className="w-1 h-1 rounded-full bg-gold/50 shrink-0" />{d}
+                        </p>
+                      ))}
+                    </div>
 
-                <div className="border-t border-white/8 pt-4 space-y-1 mb-6">
-                  {pkg.deliverables.map((d, di) => (
-                    <p key={di} className="text-white/40 text-xs flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-gold/50 shrink-0" />{d}
-                    </p>
-                  ))}
-                </div>
-
-                <button onClick={(e) => { e.stopPropagation(); setBooking(true); }}
-                  className={`w-full py-3 text-xs uppercase tracking-widest font-bold transition-all
-                    ${pkg.highlight
-                      ? "bg-gold text-black hover:bg-gold/90 shadow-lg shadow-gold/20"
-                      : "border border-white/20 text-white/70 hover:border-gold/40 hover:text-white"
-                    }`}
-                >
-                  Đặt Gói Này
-                </button>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Note */}
-          <p className="text-center text-white/25 text-xs mt-8">
-            * Gói Xem Ngày Khẩn Cấp (trong 24h) áp dụng phụ phí 50%. Liên hệ trực tiếp để biết thêm chi tiết.
-          </p>
+                    <button onClick={(e) => { e.stopPropagation(); handleBookingClick(); }}
+                      className={`w-full py-3 text-xs uppercase tracking-widest font-bold transition-all
+                        ${isHighlight ? "bg-gold text-black hover:bg-gold/90 shadow-lg shadow-gold/20" : "border border-white/20 text-white/70 hover:border-gold/40 hover:text-white"}`}
+                    >
+                      Đặt Gói Này
+                    </button>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
       <section className="py-20 bg-black border-b border-white/5">
         <div className="container mx-auto px-6">
           <div className="text-center mb-14">
@@ -525,67 +457,6 @@ export function AuspiciousDatePage() {
         </div>
       </section>
 
-      {/* ── FEATURED SERVICE TYPES ── */}
-      <section className="py-20 bg-black border-b border-white/5">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl font-bold">Dịch Vụ <span className="text-gold">Nổi Bật</span></h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[
-              {
-                title: "Xem Ngày Cưới",
-                img: weddingImg,
-                icon: Heart,
-                color: "text-red-400",
-                points: ["Xem cho cả cô dâu & chú rể","Giờ rước dâu, hành lễ tốt","Tránh ngày xung – Sát Chủ","Gói ngày đính hôn & cưới trọn gói"],
-              },
-              {
-                title: "Xem Ngày Động Thổ / Khai Trương",
-                img: buildImg,
-                icon: Hammer,
-                color: "text-gold",
-                points: ["Ngày khởi công phù hợp tuổi chủ","Giờ động thổ & nghi lễ cúng","Ngày khai trương theo loại ngành","Gói kết hợp cả hai sự kiện"],
-              },
-            ].map((item, i) => (
-              <motion.div key={i}
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.15 }}
-                className="group border border-white/8 hover:border-gold/25 transition-all duration-500 overflow-hidden"
-              >
-                <div className="relative overflow-hidden aspect-video">
-                  <img src={item.img} alt={item.title}
-                    className="w-full h-full object-cover brightness-50 group-hover:brightness-65 transition-all duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                  <div className="absolute bottom-4 left-4">
-                    <div className="flex items-center gap-2">
-                      <item.icon className={`w-5 h-5 ${item.color}`} />
-                      <h3 className="text-white font-bold">{item.title}</h3>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <ul className="grid grid-cols-2 gap-2">
-                    {item.points.map((pt, pi) => (
-                      <li key={pi} className="flex items-center gap-2 text-white/50 text-sm">
-                        <span className={`w-1 h-1 rounded-full ${item.color.replace("text-","bg-")} shrink-0`} />
-                        {pt}
-                      </li>
-                    ))}
-                  </ul>
-                  <button onClick={() => setBooking(true)}
-                    className={`mt-5 flex items-center gap-2 text-xs uppercase tracking-widest font-bold ${item.color} hover:opacity-80 transition-opacity`}
-                  >
-                    Đặt lịch xem ngay <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FAQ ── */}
       <section className="py-20 bg-black border-b border-white/5">
         <div className="container mx-auto px-6 max-w-3xl">
           <div className="text-center mb-12">
@@ -625,44 +496,6 @@ export function AuspiciousDatePage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="py-20 bg-black">
-        <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative overflow-hidden border border-gold/20 p-12 text-center"
-          >
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute left-1/4 top-0 w-64 h-32 bg-gold/8 rounded-full blur-[60px]" />
-              <div className="absolute right-1/4 bottom-0 w-64 h-32 bg-red-700/8 rounded-full blur-[60px]" />
-            </div>
-            <div className="relative z-10">
-              <Moon className="w-10 h-10 text-gold/40 mx-auto mb-4" />
-              <h3 className="text-3xl md:text-4xl font-bold mb-4 uppercase tracking-widest">
-                Chọn Đúng Ngày — <span className="text-gold">Thuận Lợi Trọn Đời</span>
-              </h3>
-              <p className="text-white/40 mb-8 max-w-xl mx-auto font-light">
-                Đừng để ngày tháng cản trở sự khởi đầu của bạn. Để Thầy Song Vũ chọn cho bạn ngày tốt nhất.
-              </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <button onClick={() => setBooking(true)}
-                  className="px-10 py-4 bg-gold text-black text-xs uppercase tracking-[0.2em] font-bold hover:bg-gold/90 transition-all shadow-lg shadow-gold/20"
-                >
-                  Đặt Lịch Xem Ngày
-                </button>
-                <Link to="/hoi-dap">
-                  <button className="px-10 py-4 border border-white/20 text-white/70 text-xs uppercase tracking-[0.2em] font-bold hover:border-gold/30 hover:text-white transition-all">
-                    Xem Hỏi Đáp
-                  </button>
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <BookingModal isOpen={isBookingOpen} onClose={() => setBooking(false)} />
     </div>
   );
 }

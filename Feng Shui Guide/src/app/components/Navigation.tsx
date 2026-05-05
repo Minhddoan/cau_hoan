@@ -5,6 +5,9 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { LoginModal } from "./LoginModal.tsx";
 import { ShoppingCart as Cart } from "./ShoppingCart.tsx";
 import { useCart } from "../context/CartContext.tsx";
+import { useSettings } from "../context/SettingsContext.tsx";
+import { useAuth } from "../context/AuthContext.tsx";
+import { LogOut, Settings, User as UserIcon, Calendar } from "lucide-react";
 
 interface MenuItem {
   label: string;
@@ -55,24 +58,28 @@ const menuItems: MenuItem[] = [
   { label: "Liên Hệ", href: "#contact" },
 ];
 
-function LogoSVG() {
+function LogoSVG({ logo, name }: { logo?: string; name?: string }) {
   return (
     <Link to="/" className="flex items-center gap-3 group">
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="22" cy="22" r="21" stroke="#D4AF37" strokeWidth="1.5" />
-        <path d="M22 8L34 18V36H10V18L22 8Z" stroke="#D4AF37" strokeWidth="1.5" fill="none" />
-        <path d="M16 36V25H28V36" stroke="#D4AF37" strokeWidth="1.5" fill="none" />
-        <circle cx="22" cy="21" r="3" fill="#D4AF37" />
-        <path d="M22 8V5M8 22H5M39 22H36M22 39V42" stroke="#D4AF37" strokeWidth="1" strokeLinecap="round" />
-        <path d="M11 11L9 9M35 11L37 9M11 33L9 35M35 33L37 35" stroke="#D4AF37" strokeWidth="1" strokeLinecap="round" />
-      </svg>
+      {logo ? (
+        <img src={logo} alt={name || "Logo"} className="w-11 h-11 object-contain" />
+      ) : (
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="22" cy="22" r="21" stroke="#D4AF37" strokeWidth="1.5" />
+          <path d="M22 8L34 18V36H10V18L22 8Z" stroke="#D4AF37" strokeWidth="1.5" fill="none" />
+          <path d="M16 36V25H28V36" stroke="#D4AF37" strokeWidth="1.5" fill="none" />
+          <circle cx="22" cy="21" r="3" fill="#D4AF37" />
+          <path d="M22 8V5M8 22H5M39 22H36M22 39V42" stroke="#D4AF37" strokeWidth="1" strokeLinecap="round" />
+          <path d="M11 11L9 9M35 11L37 9M11 33L9 35M35 33L37 35" stroke="#D4AF37" strokeWidth="1" strokeLinecap="round" />
+        </svg>
+      )}
       <div className="flex flex-col leading-none">
         <span className="text-[9px] tracking-[0.35em] uppercase text-gold/70 font-medium">Phong Thủy</span>
         <span
           className="text-xl tracking-[0.15em] uppercase"
           style={{ color: "#D4AF37", fontWeight: 700, letterSpacing: "0.15em" }}
         >
-          Song Vũ
+          {name || "Song Vũ"}
         </span>
       </div>
     </Link>
@@ -81,11 +88,13 @@ function LogoSVG() {
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const { totalItems } = useCart();
+  const { settings, getAssetUrl, setLoginOpen } = useSettings();
+  const { user, logout } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -138,7 +147,7 @@ export function Navigation() {
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <LogoSVG />
+            <LogoSVG logo={getAssetUrl(settings.site_logo)} name={settings.site_name} />
 
             {/* Desktop Menu */}
             <div className="hidden lg:flex items-center gap-1">
@@ -203,15 +212,71 @@ export function Navigation() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsLoginOpen(true)}
-                className="p-2.5 text-white/80 hover:text-gold hover:bg-white/5 rounded-full transition-all"
-                aria-label="Tài khoản"
-              >
-                <User strokeWidth={1.5} className="w-5 h-5" />
-              </motion.button>
+              <div className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => user ? setShowUserMenu(!showUserMenu) : setLoginOpen(true)}
+                  className="flex items-center gap-2 p-2 px-3 text-white/80 hover:text-gold hover:bg-white/5 rounded-full transition-all"
+                  aria-label="Tài khoản"
+                >
+                  <User strokeWidth={1.5} className="w-5 h-5" />
+                  {user && (
+                    <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest">{user.full_name.split(' ').pop()}</span>
+                  )}
+                </motion.button>
+
+                <AnimatePresence>
+                  {user && showUserMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-3 w-56 bg-black/95 border border-gold/20 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl z-[60]"
+                    >
+                      <div className="p-4 border-b border-white/5">
+                        <div className="text-sm font-bold text-white truncate">{user.full_name}</div>
+                        <div className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">{user.email}</div>
+                      </div>
+                      <div className="p-2">
+                        <Link 
+                          to="/profile?tab=profile" 
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-gold hover:bg-gold/5 rounded-lg transition-all"
+                        >
+                          <UserIcon className="w-4 h-4" /> Thông tin cá nhân
+                        </Link>
+                        <Link 
+                          to="/profile?tab=bookings" 
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-gold hover:bg-gold/5 rounded-lg transition-all"
+                        >
+                          <Calendar className="w-4 h-4" /> Lịch đặt của tôi
+                        </Link>
+                        <Link 
+                          to="/profile?tab=orders" 
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:text-gold hover:bg-gold/5 rounded-lg transition-all"
+                        >
+                          <ShoppingCart className="w-4 h-4" /> Lịch sử mua hàng
+                        </Link>
+                        <div className="h-px bg-white/5 my-1" />
+                        <button 
+                          onClick={() => { 
+                            if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+                              logout(); 
+                              setShowUserMenu(false); 
+                            }
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-400/5 rounded-lg transition-all"
+                        >
+                          <LogOut className="w-4 h-4" /> Đăng xuất
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -254,7 +319,7 @@ export function Navigation() {
               className="fixed inset-0 top-0 w-full h-screen bg-black z-50 flex flex-col"
             >
               <div className="flex items-center justify-between p-6 border-b border-gold/10">
-                <LogoSVG />
+                <LogoSVG logo={getAssetUrl(settings.site_logo)} name={settings.site_name} />
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-white/70 hover:text-gold p-2 transition-colors"
@@ -302,12 +367,16 @@ export function Navigation() {
               <div className="p-6 border-t border-white/5 grid grid-cols-2 gap-4">
                 <button
                   onClick={() => {
-                    setIsLoginOpen(true);
+                    if (user) {
+                      navigate("/profile");
+                    } else {
+                      setLoginOpen(true);
+                    }
                     setIsOpen(false);
                   }}
                   className="flex items-center justify-center gap-2 py-3 bg-white/5 rounded-xl text-white border border-white/10"
                 >
-                  <User className="w-5 h-5" /> Đăng nhập
+                  <User className="w-5 h-5" /> {user ? user.full_name.split(' ').pop() : "Đăng nhập"}
                 </button>
                 <button
                   onClick={() => {
@@ -329,7 +398,6 @@ export function Navigation() {
         </AnimatePresence>
       </motion.nav>
 
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
       <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </>
   );

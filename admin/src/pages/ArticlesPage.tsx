@@ -143,6 +143,7 @@ export function ArticlesPage() {
                 <ImagePicker
                   label="Hình Ảnh Bài Viết"
                   value={form.image_url}
+                  type="articles"
                   onChange={url => setForm((v: any) => ({ ...v, image_url: url }))}
                 />
               </div>

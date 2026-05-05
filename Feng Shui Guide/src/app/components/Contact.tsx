@@ -1,15 +1,48 @@
 import { motion } from "motion/react";
-import { Phone, Mail, MapPin, Clock, MessageCircle } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, MessageCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useSettings } from "../context/SettingsContext.tsx";
+import { useAuth } from "../context/AuthContext.tsx";
+import { postBooking } from "../../lib/api";
+import { toast } from "sonner";
 
 export function Contact() {
+  const { user } = useAuth();
+  const { settings, setLoginOpen } = useSettings();
   const [form, setForm] = useState({ name: "", phone: "", service: "", message: "" });
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSent(true);
-    setTimeout(() => setSent(false), 3000);
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để gửi yêu cầu tư vấn.", {
+        action: {
+          label: "Đăng nhập",
+          onClick: () => setLoginOpen(true)
+        }
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      await postBooking({
+        customer_name: form.name,
+        customer_phone: form.phone,
+        service_type: form.service || "Yêu cầu tư vấn tổng quát",
+        note: form.message,
+        booking_type: "consultation_request"
+      });
+      setSent(true);
+      setForm({ name: "", phone: "", service: "", message: "" });
+      toast.success("Yêu cầu của bạn đã được gửi tới hệ thống quản trị!");
+      setTimeout(() => setSent(false), 5000);
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể gửi yêu cầu. Vui lòng thử lại sau!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,19 +96,19 @@ export function Contact() {
               {
                 icon: Phone,
                 label: "Điện Thoại / Zalo",
-                value: "+84 123 456 789",
+                value: settings.contact_phone || "+84 123 456 789",
                 sub: "Gọi hoặc nhắn Zalo 24/7",
               },
               {
                 icon: Mail,
                 label: "Email",
-                value: "contact@phongthuysongu.vn",
+                value: settings.contact_email || "contact@phongthuysongu.vn",
                 sub: "Phản hồi trong vòng 2 giờ",
               },
               {
                 icon: MapPin,
                 label: "Địa Chỉ",
-                value: "123 Đường Phong Thủy, Q.1, TP.HCM",
+                value: settings.contact_address || "123 Đường Phong Thủy, Q.1, TP.HCM",
                 sub: "Mở cửa: T2 – T7, 8:00 – 18:00",
               },
               {
@@ -98,7 +131,11 @@ export function Contact() {
                 </div>
                 <div>
                   <div className="text-gray-500 text-xs uppercase tracking-widest mb-1">{item.label}</div>
-                  <div className="text-white" style={{ fontWeight: 600 }}>{item.value}</div>
+                  <div className="text-white" style={{ fontWeight: 600 }}>
+                    {String(item.value || "").split('\n').map((line, idx) => (
+                      <div key={idx}>{line.trim()}</div>
+                    ))}
+                  </div>
                   <div className="text-gray-500 text-sm mt-0.5">{item.sub}</div>
                 </div>
               </motion.div>
@@ -111,20 +148,42 @@ export function Contact() {
                 <span className="text-gold text-sm" style={{ fontWeight: 600 }}>Tư vấn nhanh qua Zalo/Facebook</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <a
-                  href="#"
-                  className="flex items-center justify-center py-3 border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 transition-all text-sm"
-                  style={{ fontWeight: 600 }}
-                >
-                  Nhắn Facebook
-                </a>
-                <a
-                  href="#"
-                  className="flex items-center justify-center py-3 border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-all text-sm"
-                  style={{ fontWeight: 600 }}
-                >
-                  Nhắn Zalo
-                </a>
+                {String(settings.facebook_url || "#").split('\n').map((link, idx) => (
+                  <a
+                    key={`fb-${idx}`}
+                    href={link.trim() || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center py-3 border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 transition-all text-sm"
+                    style={{ fontWeight: 600 }}
+                  >
+                    Nhắn Facebook {idx > 0 ? idx + 1 : ''}
+                  </a>
+                ))}
+                {String(settings.zalo_link || "#").split('\n').map((link, idx) => (
+                  <a
+                    key={`zalo-${idx}`}
+                    href={link.trim() || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center py-3 border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-all text-sm"
+                    style={{ fontWeight: 600 }}
+                  >
+                    Nhắn Zalo {idx > 0 ? idx + 1 : ''}
+                  </a>
+                ))}
+                {String(settings.tiktok_url || "#").split('\n').filter(link => link.trim() !== "").map((link, idx) => (
+                  <a
+                    key={`tiktok-${idx}`}
+                    href={link.trim() || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center py-3 border border-pink-500/30 text-pink-400 hover:bg-pink-500/10 transition-all text-sm"
+                    style={{ fontWeight: 600 }}
+                  >
+                    TikTok {idx > 0 ? idx + 1 : ''}
+                  </a>
+                ))}
               </div>
             </div>
           </motion.div>
@@ -198,14 +257,23 @@ export function Contact() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className={`w-full py-4 transition-all text-sm ${
+                disabled={loading}
+                className={`w-full py-4 transition-all text-sm flex items-center justify-center gap-2 ${
                   sent
                     ? "bg-green-600 text-white"
                     : "bg-primary hover:bg-primary/90 text-white"
-                }`}
+                } ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
                 style={{ fontWeight: 700 }}
               >
-                {sent ? "✓ Đã Gửi Thành Công!" : "Gửi Yêu Cầu Tư Vấn"}
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Đang xử lý...
+                  </>
+                ) : sent ? (
+                  "✓ Đã Gửi Thành Công!"
+                ) : (
+                  "Gửi Yêu Cầu Tư Vấn"
+                )}
               </motion.button>
             </form>
           </motion.div>

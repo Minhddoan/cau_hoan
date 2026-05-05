@@ -1,5 +1,14 @@
 import { motion } from "motion/react";
 import { Facebook, Instagram, Youtube, Mail, Phone, MapPin, ChevronRight } from "lucide-react";
+import { useSettings } from "../context/SettingsContext";
+
+function TiktokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z" />
+    </svg>
+  );
+}
 
 function FooterLogo() {
   return (
@@ -25,6 +34,8 @@ function FooterLogo() {
 }
 
 export function Footer() {
+  const { settings } = useSettings();
+
   return (
     <footer className="bg-black pt-20 pb-10 border-t border-gold/10">
       <div className="container mx-auto px-6">
@@ -36,18 +47,34 @@ export function Footer() {
               Kiến tạo không gian sống hài hòa, mang lại tài lộc và bình an qua nghệ thuật phong thủy Á Đông hiện đại.
             </p>
             <div className="flex gap-3">
-              {[
-                { Icon: Facebook, href: "#" },
-                { Icon: Instagram, href: "#" },
-                { Icon: Youtube, href: "#" },
-              ].map(({ Icon, href }, i) => (
+              {String(settings.facebook_url || "#").split('\n').filter(link => link.trim() !== "").map((href, i) => (
                 <motion.a
-                  key={i}
-                  href={href}
+                  key={`fb-${i}`}
+                  href={href.trim()}
                   whileHover={{ y: -3 }}
                   className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-gold hover:border-gold/30 transition-colors"
                 >
-                  <Icon className="w-4 h-4" />
+                  <Facebook className="w-4 h-4" />
+                </motion.a>
+              ))}
+              {String(settings.youtube_url || "#").split('\n').filter(link => link.trim() !== "").map((href, i) => (
+                <motion.a
+                  key={`yt-${i}`}
+                  href={href.trim()}
+                  whileHover={{ y: -3 }}
+                  className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-gold hover:border-gold/30 transition-colors"
+                >
+                  <Youtube className="w-4 h-4" />
+                </motion.a>
+              ))}
+              {String(settings.tiktok_url || "#").split('\n').filter(link => link.trim() !== "").map((href, i) => (
+                <motion.a
+                  key={`tt-${i}`}
+                  href={href.trim()}
+                  whileHover={{ y: -3 }}
+                  className="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-gold hover:border-gold/30 transition-colors"
+                >
+                  <TiktokIcon className="w-4 h-4" />
                 </motion.a>
               ))}
             </div>
@@ -107,18 +134,24 @@ export function Footer() {
           <div>
             <h4 className="text-white mb-6 border-l-2 border-gold pl-3" style={{ fontWeight: 700 }}>Liên Hệ</h4>
             <ul className="space-y-4">
-              <li className="flex gap-3 text-gray-500 text-sm">
-                <MapPin className="w-5 h-5 text-gold/60 shrink-0 mt-0.5" />
-                <span>123 Đường Phong Thủy, Quận 1,<br />TP. Hồ Chí Minh</span>
-              </li>
-              <li className="flex gap-3 text-gray-500 text-sm">
-                <Phone className="w-5 h-5 text-gold/60 shrink-0" />
-                <span>0123 456 789</span>
-              </li>
-              <li className="flex gap-3 text-gray-500 text-sm">
-                <Mail className="w-5 h-5 text-gold/60 shrink-0" />
-                <span>contact@phongthuysongu.vn</span>
-              </li>
+              {String(settings.contact_address || "123 Đường Phong Thủy, Quận 1, TP. Hồ Chí Minh").split('\n').map((line, idx) => (
+                <li key={`addr-${idx}`} className="flex gap-3 text-gray-500 text-sm">
+                  <MapPin className="w-5 h-5 text-gold/60 shrink-0 mt-0.5" />
+                  <span>{line.trim()}</span>
+                </li>
+              ))}
+              {String(settings.contact_phone || "0123 456 789").split('\n').map((line, idx) => (
+                <li key={`phone-${idx}`} className="flex gap-3 text-gray-500 text-sm">
+                  <Phone className="w-5 h-5 text-gold/60 shrink-0" />
+                  <span>{line.trim()}</span>
+                </li>
+              ))}
+              {String(settings.contact_email || "contact@phongthuysongu.vn").split('\n').map((line, idx) => (
+                <li key={`email-${idx}`} className="flex gap-3 text-gray-500 text-sm">
+                  <Mail className="w-5 h-5 text-gold/60 shrink-0" />
+                  <span>{line.trim()}</span>
+                </li>
+              ))}
             </ul>
 
             {/* Gold ornament */}

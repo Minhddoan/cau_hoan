@@ -222,6 +222,7 @@ export function ProductsPage() {
                 <ImagePicker
                   label="Hình Ảnh Sản Phẩm"
                   value={form.image_url}
+                  type="products"
                   onChange={url => setForm(v => ({ ...v, image_url: url }))}
                 />
               </div>

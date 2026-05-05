@@ -4,7 +4,7 @@ const { logAudit } = require('../middleware/auth');
 // ─── BOOKINGS ─────────────────────────────────────────────────────────────────
 const getBookings = async (req, res) => {
   try {
-    const { status, date, page = 1, limit = 20, search } = req.query;
+    const { status, date, booking_type, page = 1, limit = 20, search } = req.query;
     const offset = (page - 1) * limit;
     const conditions = [];
     const params = [];
@@ -12,6 +12,7 @@ const getBookings = async (req, res) => {
 
     if (status) { conditions.push(`b.status = $${idx++}`); params.push(status); }
     if (date) { conditions.push(`b.preferred_date = $${idx++}`); params.push(date); }
+    if (booking_type) { conditions.push(`b.booking_type = $${idx++}`); params.push(booking_type); }
     if (search) {
       conditions.push(`(b.customer_name ILIKE $${idx} OR b.customer_phone ILIKE $${idx})`);
       params.push(`%${search}%`); idx++;
@@ -31,20 +32,34 @@ const getBookings = async (req, res) => {
   }
 };
 
+// GET /api/my-bookings (private - khách xem lịch của mình)
+const getMyBookings = async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM bookings WHERE customer_email = $1 ORDER BY created_at DESC`,
+      [req.user.email]
+    );
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi server' });
+  }
+};
+
 // POST /api/bookings (public - khách đặt lịch)
 const createBooking = async (req, res) => {
   try {
-    const { customer_name, customer_phone, customer_email, service_type, preferred_date, preferred_time, note } = req.body;
+    const { customer_name, customer_phone, customer_email, service_type, preferred_date, preferred_time, note, booking_type } = req.body;
     if (!customer_name || !customer_phone) {
       return res.status(400).json({ success: false, message: 'Vui lòng nhập tên và số điện thoại' });
     }
     const { rows } = await pool.query(
-      `INSERT INTO bookings (customer_name, customer_phone, customer_email, service_type, preferred_date, preferred_time, note, created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW()) RETURNING *`,
-      [customer_name, customer_phone, customer_email, service_type, preferred_date, preferred_time, note]
+      `INSERT INTO bookings (customer_name, customer_phone, customer_email, service_type, preferred_date, preferred_time, note, booking_type, created_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW()) RETURNING *`,
+      [customer_name, customer_phone, customer_email, service_type, preferred_date, preferred_time, note, booking_type || 'master_booking']
     );
     res.status(201).json({ success: true, data: rows[0], message: 'Đặt lịch thành công! Chúng tôi sẽ liên hệ trong 24h.' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
@@ -205,9 +220,14 @@ const createJobApplication = async (req, res) => {
 };
 
 const updateJobApplication = async (req, res) => {
+  // Valid statuses: 'new','reviewing','interviewed','accepted','rejected'
   try {
     const { id } = req.params;
     const { status, notes } = req.body;
+    const VALID_STATUSES = ['new','reviewing','interviewed','accepted','rejected'];
+    if (status && !VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ success: false, message: `Status không hợp lệ. Chỉ chấp nhận: ${VALID_STATUSES.join(', ')}` });
+    }
     const { rows: old } = await pool.query('SELECT * FROM job_applications WHERE id=$1', [id]);
     if (!old[0]) return res.status(404).json({ success: false, message: 'Không tìm thấy' });
     const { rows } = await pool.query(
@@ -223,7 +243,7 @@ const updateJobApplication = async (req, res) => {
 };
 
 module.exports = {
-  getBookings, createBooking, updateBooking, deleteBooking,
+  getBookings, getMyBookings, createBooking, updateBooking, deleteBooking,
   getJobs, getJobsAdmin, createJob, updateJob, deleteJob,
   getJobApplications, createJobApplication, updateJobApplication
 };

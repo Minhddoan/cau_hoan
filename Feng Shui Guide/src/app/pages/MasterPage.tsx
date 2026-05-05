@@ -19,7 +19,9 @@ import {
   Feather,
 } from "lucide-react";
 import { Footer } from "../components/Footer.tsx";
-import { BookingModal } from "../components/BookingModal.tsx";
+import { useAuth } from "../context/AuthContext";
+import { useSettings } from "../context/SettingsContext";
+import { toast } from "sonner";
 
 const masterImg = "https://images.unsplash.com/photo-1768478563694-b9b38533f2f4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx2aWV0bmFtZXNlJTIwbWFzdGVyJTIwdGVhY2hlciUyMHRyYWRpdGlvbmFsfGVufDF8fHx8MTc3NTc4OTA1Nnww&ixlib=rb-4.1.0&q=80&w=1080";
 const caliImg = "https://images.unsplash.com/photo-1765188989032-eff7462279ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0cmFkaXRpb25hbCUyMENoaW5lc2UlMjBjYWxsaWdyYXBoeSUyMGluayUyMGJydXNoJTIwd3JpdGluZ3xlbnwxfHx8fDE3NzU4MDA3MTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -108,7 +110,21 @@ const books = [
 ];
 
 export function MasterPage() {
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const { user } = useAuth();
+  const { setBookingOpen, setLoginOpen } = useSettings();
+
+  const handleBookingClick = () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để thực hiện đặt lịch tư vấn.", {
+        action: {
+          label: "Đăng nhập ngay",
+          onClick: () => setLoginOpen(true)
+        }
+      });
+      return;
+    }
+    setBookingOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -157,7 +173,7 @@ export function MasterPage() {
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setIsBookingOpen(true)}
+                onClick={handleBookingClick}
                 className="inline-flex items-center gap-3 bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-full transition-all shadow-xl shadow-primary/30"
                 style={{ fontWeight: 700 }}
               >
@@ -510,7 +526,7 @@ export function MasterPage() {
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => setIsBookingOpen(true)}
+                  onClick={handleBookingClick}
                   className="inline-flex items-center gap-3 bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-full transition-all shadow-xl shadow-primary/20"
                   style={{ fontWeight: 700 }}
                 >
@@ -534,8 +550,6 @@ export function MasterPage() {
       </section>
 
       <Footer />
-
-      <BookingModal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} />
     </div>
   );
 }

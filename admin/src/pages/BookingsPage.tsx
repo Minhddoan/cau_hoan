@@ -12,6 +12,16 @@ const STATUS_LABELS: Record<string, string> = {
   pending: 'Chờ xác nhận', confirmed: 'Đã xác nhận', completed: 'Hoàn thành', cancelled: 'Đã huỷ'
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  master_booking: 'Gặp Thầy',
+  consultation_request: 'Yêu cầu tư vấn'
+};
+
+const TYPE_STYLES: Record<string, string> = {
+  master_booking: 'badge-gold',
+  consultation_request: 'badge-blue'
+};
+
 export function BookingsPage() {
   const { hasRole } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
@@ -110,8 +120,9 @@ export function BookingsPage() {
           <table>
             <thead>
               <tr>
-                <th>#</th>
+                 <th>#</th>
                 <th>Khách Hàng</th>
+                <th>Loại</th>
                 <th>SĐT</th>
                 <th>Dịch Vụ</th>
                 <th>Ngày Hẹn</th>
@@ -129,9 +140,14 @@ export function BookingsPage() {
               ) : bookings.map(b => (
                 <tr key={b.id}>
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>#{b.id}</td>
-                  <td>
+                   <td>
                     <div style={{ fontWeight: 600, fontSize: '0.8rem' }}>{b.customer_name}</div>
                     {b.customer_email && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{b.customer_email}</div>}
+                  </td>
+                  <td>
+                    <span className={`badge ${TYPE_STYLES[b.booking_type] || 'badge-gray'}`} style={{ fontSize: '0.6rem' }}>
+                      {TYPE_LABELS[b.booking_type] || 'Không rõ'}
+                    </span>
                   </td>
                   <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{b.customer_phone}</td>
                   <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.service_type || '—'}</td>

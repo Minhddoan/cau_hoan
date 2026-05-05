@@ -233,6 +233,36 @@ CREATE TABLE IF NOT EXISTS gallery_images (
 );
 
 -- ============================================================
+-- 10.5. ORDERS (Đơn Hàng)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS orders (
+  id               SERIAL PRIMARY KEY,
+  customer_name    VARCHAR(200) NOT NULL,
+  customer_phone   VARCHAR(20) NOT NULL,
+  customer_email   VARCHAR(255),
+  shipping_address TEXT NOT NULL,
+  total_amount     BIGINT NOT NULL DEFAULT 0,
+  status           VARCHAR(50) DEFAULT 'pending'
+                   CHECK (status IN ('pending','confirmed','shipping','completed','cancelled')),
+  payment_method   VARCHAR(50) DEFAULT 'cod' CHECK (payment_method IN ('cod','bank_transfer')),
+  payment_status   VARCHAR(50) DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid','paid')),
+  note             TEXT,
+  assigned_to      INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at       TIMESTAMPTZ DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id         SERIAL PRIMARY KEY,
+  order_id   INT REFERENCES orders(id) ON DELETE CASCADE,
+  product_id INT REFERENCES products(id) ON DELETE SET NULL,
+  product_name VARCHAR(200),
+  price      BIGINT NOT NULL,
+  quantity   INT NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================
 -- 11. SITE SETTINGS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS site_settings (

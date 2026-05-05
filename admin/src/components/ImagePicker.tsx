@@ -7,9 +7,10 @@ interface ImagePickerProps {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  type?: 'products' | 'services' | 'articles' | 'gallery' | 'avatars' | 'banners' | 'others';
 }
 
-export function ImagePicker({ value, onChange, label = 'Hình Ảnh' }: ImagePickerProps) {
+export function ImagePicker({ value, onChange, label = 'Hình Ảnh', type = 'others' }: ImagePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview]     = useState(value);
@@ -27,7 +28,7 @@ export function ImagePicker({ value, onChange, label = 'Hình Ảnh' }: ImagePic
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const res = await api.post('/admin/upload', formData, {
+      const res = await api.post(`/admin/upload?type=${type}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const url = res.data.url;

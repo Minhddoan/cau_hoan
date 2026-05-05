@@ -5,7 +5,7 @@
   "main": "src/main.js",
   "scripts": {
     "start":    "node src/main.js",
-    "dev":      "node --watch src/main.js",
+    "dev":      "nodemon src/main.js",
     "setup-db": "node setup-db.js"
   },
   "keywords": [],

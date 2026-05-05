@@ -23,7 +23,7 @@ async function seed() {
     }
 
     const adminEmail    = process.env.ADMIN_EMAIL    || 'admin@songvu.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
+    const adminPassword = process.env.ADMIN_PASSWORD || '123456';
     const hash = await bcrypt.hash(adminPassword, 12);
 
     await pool.query(

@@ -26,7 +26,9 @@ import {
   Phone,
 } from "lucide-react";
 import { Footer } from "../components/Footer.tsx";
-import { BookingModal } from "../components/BookingModal.tsx";
+import { useSettings } from "../context/SettingsContext.tsx";
+import { useAuth } from "../context/AuthContext.tsx";
+import { toast } from "sonner";
 
 /* ── IMAGES ── */
 const heroImg =
@@ -440,9 +442,20 @@ const whyChoose = [
 
 /* ── COMPONENT ── */
 export function FengShuiProfilePage() {
+  const { setBookingOpen, setLoginOpen } = useSettings();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("canhan");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
+
+  const handleBookingClick = () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để đặt lịch tư vấn.", {
+        action: { label: "Đăng nhập ngay", onClick: () => setLoginOpen(true) }
+      });
+      return;
+    }
+    setBookingOpen(true);
+  };
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
@@ -621,11 +634,10 @@ export function FengShuiProfilePage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-5 py-3 transition-all duration-200 border text-sm ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2 px-5 py-3 transition-all duration-200 border text-sm ${activeTab === tab.id
                     ? "bg-gold text-black border-gold shadow-lg shadow-gold/20"
                     : "border-gold/20 text-white/70 hover:border-gold/50 hover:text-white bg-transparent"
-                }`}
+                  }`}
                 style={{ fontWeight: activeTab === tab.id ? 700 : 500 }}
               >
                 <tab.icon className="w-4 h-4" />
@@ -660,7 +672,7 @@ export function FengShuiProfilePage() {
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => setIsBookingOpen(true)}
+                    onClick={handleBookingClick}
                     className="mt-8 inline-flex items-center gap-3 bg-primary hover:bg-primary/90 text-white px-8 py-3.5 rounded-full transition-all shadow-lg shadow-primary/20"
                     style={{ fontWeight: 700 }}
                   >
@@ -687,20 +699,18 @@ export function FengShuiProfilePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1, duration: 0.4 }}
-                    className={`relative flex flex-col border p-7 transition-all duration-300 hover:-translate-y-1 ${
-                      pkg.highlight
+                    className={`relative flex flex-col border p-7 transition-all duration-300 hover:-translate-y-1 ${pkg.highlight
                         ? "border-gold bg-gold/5 shadow-xl shadow-gold/10"
                         : "border-white/8 bg-white/2 hover:border-gold/30"
-                    }`}
+                      }`}
                   >
                     {/* Badge */}
                     {pkg.badge && (
                       <div
-                        className={`absolute -top-3 left-6 px-4 py-1 text-xs uppercase tracking-wider ${
-                          pkg.highlight
+                        className={`absolute -top-3 left-6 px-4 py-1 text-xs uppercase tracking-wider ${pkg.highlight
                             ? "bg-gold text-black"
                             : "bg-primary text-white"
-                        }`}
+                          }`}
                         style={{ fontWeight: 700 }}
                       >
                         {pkg.badge}
@@ -755,9 +765,8 @@ export function FengShuiProfilePage() {
                       {pkg.features.map((f, j) => (
                         <div key={j} className="flex items-start gap-2.5 text-sm">
                           <CheckCircle2
-                            className={`w-4 h-4 shrink-0 mt-0.5 ${
-                              pkg.highlight ? "text-gold" : "text-primary"
-                            }`}
+                            className={`w-4 h-4 shrink-0 mt-0.5 ${pkg.highlight ? "text-gold" : "text-primary"
+                              }`}
                           />
                           <span className="text-gray-300">{f}</span>
                         </div>
@@ -784,12 +793,11 @@ export function FengShuiProfilePage() {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={() => setIsBookingOpen(true)}
-                      className={`w-full py-3.5 text-sm transition-all ${
-                        pkg.highlight
+                      onClick={handleBookingClick}
+                      className={`w-full py-3.5 text-sm transition-all ${pkg.highlight
                           ? "bg-gold text-black hover:bg-gold/90"
                           : "border border-gold/30 text-gold hover:bg-gold/5 hover:border-gold"
-                      }`}
+                        }`}
                       style={{ fontWeight: 700 }}
                     >
                       {pkg.price === "Liên hệ" ? "Liên Hệ Báo Giá" : "Đặt Lịch Ngay"}
@@ -904,9 +912,8 @@ export function FengShuiProfilePage() {
                     >
                       <div className="flex flex-col items-center gap-1.5">
                         <t.icon
-                          className={`w-5 h-5 ${
-                            activeTab === t.id ? "text-gold" : "text-white/50"
-                          }`}
+                          className={`w-5 h-5 ${activeTab === t.id ? "text-gold" : "text-white/50"
+                            }`}
                         />
                         <span
                           className={
@@ -955,11 +962,10 @@ export function FengShuiProfilePage() {
                     {row.vals.map((v, vi) => (
                       <td
                         key={vi}
-                        className={`py-4 px-5 text-center text-sm ${
-                          tabs[vi].id === activeTab
+                        className={`py-4 px-5 text-center text-sm ${tabs[vi].id === activeTab
                             ? "text-gold"
                             : "text-gray-500"
-                        }`}
+                          }`}
                         style={{ fontWeight: tabs[vi].id === activeTab ? 600 : 400 }}
                       >
                         {v}
@@ -1000,20 +1006,18 @@ export function FengShuiProfilePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.07 }}
-                className={`border transition-all duration-300 ${
-                  openFaq === i
+                className={`border transition-all duration-300 ${openFaq === i
                     ? "border-gold/40 bg-gold/5"
                     : "border-white/8 bg-white/2 hover:border-gold/20"
-                }`}
+                  }`}
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left"
                 >
                   <span
-                    className={`text-sm leading-relaxed transition-colors ${
-                      openFaq === i ? "text-gold" : "text-white"
-                    }`}
+                    className={`text-sm leading-relaxed transition-colors ${openFaq === i ? "text-gold" : "text-white"
+                      }`}
                     style={{ fontWeight: openFaq === i ? 700 : 500 }}
                   >
                     {faq.q}
@@ -1128,7 +1132,7 @@ export function FengShuiProfilePage() {
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => setIsBookingOpen(true)}
+                  onClick={handleBookingClick}
                   className="inline-flex items-center gap-3 bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-full transition-all shadow-xl shadow-primary/20"
                   style={{ fontWeight: 700 }}
                 >
@@ -1153,10 +1157,6 @@ export function FengShuiProfilePage() {
 
       <Footer />
 
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-      />
     </div>
   );
 }

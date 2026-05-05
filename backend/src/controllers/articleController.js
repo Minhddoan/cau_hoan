@@ -117,8 +117,11 @@ const updateArticle = async (req, res) => {
     if (!old[0]) return res.status(404).json({ success: false, message: 'Không tìm thấy bài viết' });
 
     const { rows } = await pool.query(
-      `UPDATE articles SET category_id=$1, title=$2, slug=$3, excerpt=$4, content=$5, image_url=$6,
-       read_time=$7, is_featured=$8, is_published=$9, tags=$10, updated_at=NOW(),
+      `UPDATE articles SET 
+       category_id=COALESCE($1,category_id), title=COALESCE($2,title), slug=COALESCE($3,slug), 
+       excerpt=COALESCE($4,excerpt), content=COALESCE($5,content), image_url=COALESCE($6,image_url),
+       read_time=COALESCE($7,read_time), is_featured=COALESCE($8,is_featured), is_published=COALESCE($9,is_published), 
+       tags=COALESCE($10,tags), updated_at=NOW(),
        published_at = CASE WHEN $9 AND published_at IS NULL THEN NOW() ELSE published_at END
        WHERE id=$11 RETURNING *`,
       [category_id, title, slug, excerpt, content, image_url, read_time, is_featured, is_published, tags, id]

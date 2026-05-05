@@ -27,7 +27,9 @@ import {
   Zap,
   ChevronDown,
 } from "lucide-react";
-import { BookingModal } from "../components/BookingModal.tsx";
+import { useSettings } from "../context/SettingsContext.tsx";
+import { useAuth } from "../context/AuthContext.tsx";
+import { toast } from "sonner";
 
 // ─── Images ───────────────────────────────────────────────────────────────────
 const heroImg   = "https://images.unsplash.com/photo-1767288533191-cc2c72bad9c9?w=1600";
@@ -335,9 +337,20 @@ const testimonials = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function ServiceProfilePage() {
+  const { setBookingOpen, setLoginOpen } = useSettings();
+  const { user } = useAuth();
   const [activeTab, setActiveTab]     = useState<TabId>("vanphong");
   const [openFaq, setOpenFaq]         = useState<number | null>(null);
-  const [isBookingOpen, setBooking]   = useState(false);
+
+  const handleBookingClick = () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để đặt lịch tư vấn.", {
+        action: { label: "Đăng nhập ngay", onClick: () => setLoginOpen(true) }
+      });
+      return;
+    }
+    setBookingOpen(true);
+  };
 
   const currentTab = tabs.find((t) => t.id === activeTab)!;
 
@@ -464,7 +477,7 @@ export function ServiceProfilePage() {
                   </h3>
                   <p className="text-white/50 leading-relaxed font-light">{currentTab.desc}</p>
                   <button
-                    onClick={() => setBooking(true)}
+                    onClick={handleBookingClick}
                     className="mt-8 inline-flex items-center gap-3 bg-red-600 hover:bg-red-500 text-white px-8 py-3.5 transition-all shadow-lg shadow-red-600/20 font-bold text-sm uppercase tracking-widest"
                   >
                     <Calendar className="w-4 h-4" /> Tư Vấn Miễn Phí
@@ -523,7 +536,7 @@ export function ServiceProfilePage() {
                       ))}
                     </div>
 
-                    <button onClick={() => setBooking(true)}
+                    <button onClick={handleBookingClick}
                       className={`mt-6 w-full py-3 text-xs uppercase tracking-widest font-bold transition-all
                         ${pkg.highlight
                           ? "bg-gold text-black hover:bg-gold/90 shadow-lg shadow-gold/20"
@@ -660,7 +673,7 @@ export function ServiceProfilePage() {
                 Đặt lịch tư vấn miễn phí 30 phút với Thầy Song Vũ để tìm hiểu gói dịch vụ phù hợp nhất cho doanh nghiệp của bạn.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <button onClick={() => setBooking(true)}
+                <button onClick={handleBookingClick}
                   className="px-10 py-4 bg-gold text-black text-xs uppercase tracking-[0.2em] font-bold hover:bg-gold/90 transition-all shadow-lg shadow-gold/20"
                 >
                   Đặt Lịch Tư Vấn Miễn Phí
@@ -676,7 +689,6 @@ export function ServiceProfilePage() {
         </div>
       </section>
 
-      <BookingModal isOpen={isBookingOpen} onClose={() => setBooking(false)} />
     </div>
   );
 }
