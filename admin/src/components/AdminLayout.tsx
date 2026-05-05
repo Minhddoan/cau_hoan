@@ -3,11 +3,23 @@ import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   LayoutDashboard, Package, BookOpen, HelpCircle, Calendar,
-  Briefcase, Users2, Settings, FileText, Star, LogOut, Bell, ChevronDown,
+  Users2, Settings, FileText, Star, LogOut, Bell, ChevronDown,
   Image, ConciergeBell, FileBadge
 } from 'lucide-react';
 
-const navItems = [
+interface NavItem {
+  to: string;
+  icon: any;
+  label: string;
+  role?: string;
+}
+
+interface NavGroup {
+  group: string;
+  items: NavItem[];
+}
+
+const navItems: NavGroup[] = [
   { group: 'Tổng Quan', items: [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   ]},
@@ -32,7 +44,6 @@ const navItems = [
 
 export function AdminLayout() {
   const { user, logout, hasRole } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -94,7 +105,6 @@ export function AdminLayout() {
             <Bell size={18} style={{ color: 'var(--text-muted)', cursor: 'pointer' }} />
             <div
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.8rem' }}
-              onClick={() => setShowUserMenu(v => !v)}
             >
               <span style={{ color: 'var(--text-muted)' }}>{user.email}</span>
               <span className={`badge badge-${user.role === 'super_admin' ? 'gold' : user.role === 'admin' ? 'blue' : user.role === 'editor' ? 'green' : 'gray'}`}>

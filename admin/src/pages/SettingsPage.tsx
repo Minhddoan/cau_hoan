@@ -32,7 +32,19 @@ export function SettingsPage() {
 
   if (loading) return <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Đang tải...</div>;
 
-  const sections = [
+  interface Field {
+    key: string;
+    label: string;
+    type: string;
+    options?: string[];
+  }
+
+  interface Section {
+    title: string;
+    fields: Field[];
+  }
+
+  const sections: Section[] = [
     {
       title: 'Thông Tin Chung',
       fields: [
@@ -92,7 +104,7 @@ export function SettingsPage() {
                     <label className="form-label">{field.label}</label>
                     {field.type === 'select' ? (
                       <select className="form-select" value={settings[field.key] || ''} onChange={f(field.key)}>
-                        {field.options?.map(o => <option key={o} value={o}>{o === 'true' ? 'Bật' : 'Tắt'}</option>)}
+                        {field.options?.map((o: string) => <option key={o} value={o}>{o === 'true' ? 'Bật' : 'Tắt'}</option>)}
                       </select>
                     ) : field.type === 'textarea' ? (
                       <textarea className="form-input" value={settings[field.key] || ''} onChange={f(field.key)} rows={3} style={{ resize: 'vertical' }} placeholder="Mỗi giá trị 1 dòng..." />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, Trash2, X, Shield, UserCheck, UserX, Key } from 'lucide-react';
+import { Plus, Pencil, X, Shield, UserCheck, UserX, Key } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';

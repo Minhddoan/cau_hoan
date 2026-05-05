@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
 import {
-  Package, BookOpen, HelpCircle, Calendar,
+  Package, BookOpen, Calendar,
   Briefcase, Users2, Clock, CheckCircle2, TrendingUp, Activity
 } from 'lucide-react';
 import api from '../lib/api';
@@ -117,7 +117,7 @@ export function DashboardPage() {
                 />
                 <Tooltip
                   contentStyle={{ background: '#141418', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
-                  formatter={(val, name, entry) => [val, STATUS_LABELS[entry.payload.status] || entry.payload.status]}
+                  formatter={(val, _name, entry) => [val, STATUS_LABELS[entry.payload.status] || entry.payload.status]}
                 />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                   {data.charts.bookingsByStatus.map((entry: any, i: number) => (
