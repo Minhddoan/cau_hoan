@@ -7,43 +7,40 @@ import {
   Image, ConciergeBell, FileBadge
 } from 'lucide-react';
 
-interface NavItem {
-  to: string;
-  icon: any;
-  label: string;
-  role?: string;
-}
-
-interface NavGroup {
-  group: string;
-  items: NavItem[];
-}
-
-const navItems: NavGroup[] = [
-  { group: 'Tổng Quan', items: [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  ]},
-  { group: 'Nội Dung', items: [
-    { to: '/products',     icon: Package,      label: 'Sản Phẩm' },
-    { to: '/services',     icon: ConciergeBell,label: 'Dịch Vụ' },
-    { to: '/articles',     icon: BookOpen,     label: 'Bài Viết' },
-    { to: '/gallery',      icon: Image,        label: 'Thư Viện' },
-    { to: '/faqs',         icon: HelpCircle,   label: 'Hỏi Đáp' },
-    { to: '/testimonials', icon: Star,         label: 'Đánh Giá' },
-  ]},
-  { group: 'Vận Hành', items: [
-    { to: '/bookings',     icon: Calendar,     label: 'Lịch Hẹn' },
-    { to: '/jobs',         icon: FileBadge,    label: 'Tuyển Dụng' },
-  ]},
-  { group: 'Hệ Thống', items: [
-    { to: '/users',        icon: Users2,       label: 'Người Dùng', role: 'super_admin' },
-    { to: '/settings',     icon: Settings,     label: 'Cài Đặt',   role: 'admin' },
-    { to: '/audit-logs',   icon: FileText,     label: 'Nhật Ký',   role: 'admin' },
-  ]},
+const navItems = [
+  {
+    group: 'Tổng Quan', items: [
+      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    ]
+  },
+  {
+    group: 'Nội Dung', items: [
+      { to: '/products', icon: Package, label: 'Sản Phẩm' },
+      { to: '/services', icon: ConciergeBell, label: 'Dịch Vụ' },
+      { to: '/articles', icon: BookOpen, label: 'Bài Viết' },
+      { to: '/gallery', icon: Image, label: 'Thư Viện' },
+      { to: '/faqs', icon: HelpCircle, label: 'Hỏi Đáp' },
+      { to: '/testimonials', icon: Star, label: 'Đánh Giá' },
+    ]
+  },
+  {
+    group: 'Vận Hành', items: [
+      { to: '/bookings', icon: Calendar, label: 'Lịch Hẹn' },
+      { to: '/jobs', icon: FileBadge, label: 'Tuyển Dụng' },
+    ]
+  },
+  {
+    group: 'Hệ Thống', items: [
+      { to: '/users', icon: Users2, label: 'Người Dùng', role: 'super_admin' },
+      { to: '/settings', icon: Settings, label: 'Cài Đặt', role: 'admin' },
+      { to: '/audit-logs', icon: FileText, label: 'Nhật Ký', role: 'admin' },
+    ]
+  },
 ];
 
 export function AdminLayout() {
   const { user, logout, hasRole } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -65,15 +62,15 @@ export function AdminLayout() {
               {group.items
                 .filter(item => !item.role || hasRole(item.role))
                 .map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                >
-                  <item.icon className="icon" />
-                  {item.label}
-                </NavLink>
-              ))}
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                  >
+                    <item.icon className="icon" />
+                    {item.label}
+                  </NavLink>
+                ))}
             </div>
           ))}
         </nav>
@@ -104,13 +101,29 @@ export function AdminLayout() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Bell size={18} style={{ color: 'var(--text-muted)', cursor: 'pointer' }} />
             <div
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.8rem' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.8rem', position: 'relative' }}
+              onClick={() => setShowUserMenu(v => !v)}
             >
               <span style={{ color: 'var(--text-muted)' }}>{user.email}</span>
               <span className={`badge badge-${user.role === 'super_admin' ? 'gold' : user.role === 'admin' ? 'blue' : user.role === 'editor' ? 'green' : 'gray'}`}>
                 {user.role_display}
               </span>
               <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+              {showUserMenu && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem',
+                  backgroundColor: 'white', border: '1px solid #e5e7eb',
+                  borderRadius: '0.375rem', padding: '0.5rem', zIndex: 50,
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', minWidth: '120px'
+                }}>
+                  <div
+                    onClick={logout}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444' }}
+                  >
+                    <LogOut size={16} /> Đăng xuất
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
