@@ -7,7 +7,19 @@ import {
   Image, ConciergeBell, FileBadge
 } from 'lucide-react';
 
-const navItems = [
+type NavItem = {
+  to: string;
+  icon: React.ElementType;
+  label: string;
+  role?: string;
+};
+
+type NavGroup = {
+  group: string;
+  items: NavItem[];
+};
+
+const navItems: NavGroup[] = [
   {
     group: 'Tổng Quan', items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
